@@ -9,8 +9,50 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as RoutinesRouteImport } from './routes/routines'
+import { Route as PatientsRouteImport } from './routes/patients'
+import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as MedicationsRouteImport } from './routes/medications'
+import { Route as EinkPreviewRouteImport } from './routes/eink-preview'
+import { Route as DevicesRouteImport } from './routes/devices'
 import { Route as IndexRouteImport } from './routes/index'
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RoutinesRoute = RoutinesRouteImport.update({
+  id: '/routines',
+  path: '/routines',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PatientsRoute = PatientsRouteImport.update({
+  id: '/patients',
+  path: '/patients',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MedicationsRoute = MedicationsRouteImport.update({
+  id: '/medications',
+  path: '/medications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EinkPreviewRoute = EinkPreviewRouteImport.update({
+  id: '/eink-preview',
+  path: '/eink-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevicesRoute = DevicesRouteImport.update({
+  id: '/devices',
+  path: '/devices',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +61,130 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/devices': typeof DevicesRoute
+  '/eink-preview': typeof EinkPreviewRoute
+  '/medications': typeof MedicationsRoute
+  '/notifications': typeof NotificationsRoute
+  '/patients': typeof PatientsRoute
+  '/routines': typeof RoutinesRoute
+  '/settings': typeof SettingsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/devices': typeof DevicesRoute
+  '/eink-preview': typeof EinkPreviewRoute
+  '/medications': typeof MedicationsRoute
+  '/notifications': typeof NotificationsRoute
+  '/patients': typeof PatientsRoute
+  '/routines': typeof RoutinesRoute
+  '/settings': typeof SettingsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/devices': typeof DevicesRoute
+  '/eink-preview': typeof EinkPreviewRoute
+  '/medications': typeof MedicationsRoute
+  '/notifications': typeof NotificationsRoute
+  '/patients': typeof PatientsRoute
+  '/routines': typeof RoutinesRoute
+  '/settings': typeof SettingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/devices'
+    | '/eink-preview'
+    | '/medications'
+    | '/notifications'
+    | '/patients'
+    | '/routines'
+    | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/devices'
+    | '/eink-preview'
+    | '/medications'
+    | '/notifications'
+    | '/patients'
+    | '/routines'
+    | '/settings'
+  id:
+    | '__root__'
+    | '/'
+    | '/devices'
+    | '/eink-preview'
+    | '/medications'
+    | '/notifications'
+    | '/patients'
+    | '/routines'
+    | '/settings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DevicesRoute: typeof DevicesRoute
+  EinkPreviewRoute: typeof EinkPreviewRoute
+  MedicationsRoute: typeof MedicationsRoute
+  NotificationsRoute: typeof NotificationsRoute
+  PatientsRoute: typeof PatientsRoute
+  RoutinesRoute: typeof RoutinesRoute
+  SettingsRoute: typeof SettingsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/routines': {
+      id: '/routines'
+      path: '/routines'
+      fullPath: '/routines'
+      preLoaderRoute: typeof RoutinesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/patients': {
+      id: '/patients'
+      path: '/patients'
+      fullPath: '/patients'
+      preLoaderRoute: typeof PatientsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/medications': {
+      id: '/medications'
+      path: '/medications'
+      fullPath: '/medications'
+      preLoaderRoute: typeof MedicationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/eink-preview': {
+      id: '/eink-preview'
+      path: '/eink-preview'
+      fullPath: '/eink-preview'
+      preLoaderRoute: typeof EinkPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/devices': {
+      id: '/devices'
+      path: '/devices'
+      fullPath: '/devices'
+      preLoaderRoute: typeof DevicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,17 +197,14 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DevicesRoute: DevicesRoute,
+  EinkPreviewRoute: EinkPreviewRoute,
+  MedicationsRoute: MedicationsRoute,
+  NotificationsRoute: NotificationsRoute,
+  PatientsRoute: PatientsRoute,
+  RoutinesRoute: RoutinesRoute,
+  SettingsRoute: SettingsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
