@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RoutinesRouteImport } from './routes/routines'
 import { Route as PatientsRouteImport } from './routes/patients'
 import { Route as NotificationsRouteImport } from './routes/notifications'
@@ -17,6 +18,11 @@ import { Route as EinkPreviewRouteImport } from './routes/eink-preview'
 import { Route as DevicesRouteImport } from './routes/devices'
 import { Route as IndexRouteImport } from './routes/index'
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RoutinesRoute = RoutinesRouteImport.update({
   id: '/routines',
   path: '/routines',
@@ -61,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof NotificationsRoute
   '/patients': typeof PatientsRoute
   '/routines': typeof RoutinesRoute
+  '/settings': typeof SettingsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +77,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof NotificationsRoute
   '/patients': typeof PatientsRoute
   '/routines': typeof RoutinesRoute
+  '/settings': typeof SettingsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   '/notifications': typeof NotificationsRoute
   '/patients': typeof PatientsRoute
   '/routines': typeof RoutinesRoute
+  '/settings': typeof SettingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/patients'
     | '/routines'
+    | '/settings'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/patients'
     | '/routines'
+    | '/settings'
   id:
     | '__root__'
     | '/'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/patients'
     | '/routines'
+    | '/settings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,10 +131,18 @@ export interface RootRouteChildren {
   NotificationsRoute: typeof NotificationsRoute
   PatientsRoute: typeof PatientsRoute
   RoutinesRoute: typeof RoutinesRoute
+  SettingsRoute: typeof SettingsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/routines': {
       id: '/routines'
       path: '/routines'
@@ -183,6 +203,7 @@ const rootRouteChildren: RootRouteChildren = {
   NotificationsRoute: NotificationsRoute,
   PatientsRoute: PatientsRoute,
   RoutinesRoute: RoutinesRoute,
+  SettingsRoute: SettingsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
