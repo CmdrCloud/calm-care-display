@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Pill, Plus, Clock } from "lucide-react";
 import { medications, nextMedication } from "@/lib/mock-data";
+import { NextDoseTimer } from "@/components/next-dose-timer";
+
 
 export const Route = createFileRoute("/medications")({
   head: () => ({ meta: [{ title: "Medications — CareCircle AI" }] }),
