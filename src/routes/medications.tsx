@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Pill, Plus, Clock } from "lucide-react";
 import { medications, nextMedication } from "@/lib/mock-data";
+import { NextDoseTimer } from "@/components/next-dose-timer";
+
 
 export const Route = createFileRoute("/medications")({
   head: () => ({ meta: [{ title: "Medications — CareCircle AI" }] }),
@@ -21,7 +23,9 @@ function Medications() {
   return (
     <AppShell title="Medications" subtitle="Schedule, confirm, and monitor doses">
       <div className="mx-auto max-w-6xl space-y-6">
+        <NextDoseTimer />
         <Card className="rounded-3xl border-primary/20 bg-gradient-to-br from-primary/5 to-card">
+
           <CardContent className="flex flex-wrap items-center gap-4 p-6">
             <div className="grid h-14 w-14 place-items-center rounded-2xl bg-primary text-primary-foreground">
               <Pill className="h-7 w-7" />
