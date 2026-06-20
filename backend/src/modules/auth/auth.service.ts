@@ -6,16 +6,13 @@ import { users } from "../../shared/database/schema";
 import { HttpError } from "../../shared/middleware/error.middleware";
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkeychangeinproduction";
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "supersecretrefreshkeychangeinproduction";
+const JWT_REFRESH_SECRET =
+  process.env.JWT_REFRESH_SECRET || "supersecretrefreshkeychangeinproduction";
 
 export class AuthService {
   async login(email: string, password_raw: string) {
     // 1. Fetch user by email
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email))
-      .limit(1);
+    const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
     if (!user) {
       throw new HttpError(401, "Invalid email or password");
@@ -47,7 +44,7 @@ export class AuthService {
   async refreshToken(token: string) {
     try {
       const decoded = jwt.verify(token, JWT_REFRESH_SECRET) as { userId: string; email: string };
-      
+
       const accessToken = this.generateAccessToken(decoded.userId, decoded.email);
       const refreshToken = this.generateRefreshToken(decoded.userId, decoded.email);
 

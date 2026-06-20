@@ -5,22 +5,14 @@ import { HttpError } from "../../shared/middleware/error.middleware";
 
 export class PatientsService {
   async getPatients(familyId: string) {
-    return await db
-      .select()
-      .from(patients)
-      .where(eq(patients.familyId, familyId));
+    return await db.select().from(patients).where(eq(patients.familyId, familyId));
   }
 
   async getPatientById(familyId: string, id: string) {
     const [patient] = await db
       .select()
       .from(patients)
-      .where(
-        and(
-          eq(patients.familyId, familyId),
-          eq(patients.id, id)
-        )
-      )
+      .where(and(eq(patients.familyId, familyId), eq(patients.id, id)))
       .limit(1);
 
     if (!patient) {
@@ -30,7 +22,7 @@ export class PatientsService {
   }
 
   async createPatient(
-    familyId: string, 
+    familyId: string,
     data: {
       name: string;
       dateOfBirth: string; // YYYY-MM-DD
@@ -43,7 +35,7 @@ export class PatientsService {
       emergencyContactPhone?: string;
       riskLevel?: string;
       avatarInitials?: string;
-    }
+    },
   ) {
     const [newPatient] = await db
       .insert(patients)
@@ -51,7 +43,14 @@ export class PatientsService {
         ...data,
         familyId,
         riskLevel: data.riskLevel || "low",
-        avatarInitials: data.avatarInitials || data.name.split(" ").map(n => n[0]).join("").substring(0, 3).toUpperCase(),
+        avatarInitials:
+          data.avatarInitials ||
+          data.name
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .substring(0, 3)
+            .toUpperCase(),
       })
       .returning();
     return newPatient;
@@ -67,12 +66,7 @@ export class PatientsService {
         ...data,
         updatedAt: new Date(),
       })
-      .where(
-        and(
-          eq(patients.familyId, familyId),
-          eq(patients.id, id)
-        )
-      )
+      .where(and(eq(patients.familyId, familyId), eq(patients.id, id)))
       .returning();
     return updatedPatient;
   }

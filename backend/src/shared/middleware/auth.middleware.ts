@@ -15,7 +15,10 @@ export interface UserPayload {
 declare module "fastify" {
   interface FastifyRequest {
     user?: UserPayload;
-    requireMembership: (familyId: string, allowedRoles?: ("admin" | "editor" | "viewer")[]) => Promise<typeof familyMemberships.$inferSelect>;
+    requireMembership: (
+      familyId: string,
+      allowedRoles?: ("admin" | "editor" | "viewer")[],
+    ) => Promise<typeof familyMemberships.$inferSelect>;
   }
 }
 
@@ -40,7 +43,7 @@ export async function authenticateToken(request: FastifyRequest, reply: FastifyR
 export async function requireMembershipHelper(
   this: FastifyRequest,
   familyId: string,
-  allowedRoles: ("admin" | "editor" | "viewer")[] = ["admin", "editor", "viewer"]
+  allowedRoles: ("admin" | "editor" | "viewer")[] = ["admin", "editor", "viewer"],
 ) {
   if (!this.user) {
     throw new HttpError(401, "Authentication required");
@@ -51,10 +54,7 @@ export async function requireMembershipHelper(
     .select()
     .from(familyMemberships)
     .where(
-      and(
-        eq(familyMemberships.familyId, familyId),
-        eq(familyMemberships.userId, this.user.userId)
-      )
+      and(eq(familyMemberships.familyId, familyId), eq(familyMemberships.userId, this.user.userId)),
     )
     .limit(1);
 

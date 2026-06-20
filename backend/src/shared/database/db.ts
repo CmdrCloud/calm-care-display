@@ -5,7 +5,8 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
-const connectionString = process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432/carecircle";
+const connectionString =
+  process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5433/carecircle";
 
 const pool = new pg.Pool({
   connectionString,

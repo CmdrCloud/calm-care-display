@@ -5,7 +5,7 @@ export class HttpError extends Error {
   constructor(
     public statusCode: number,
     message: string,
-    public details?: any
+    public details?: any,
   ) {
     super(message);
     this.name = "HttpError";
@@ -15,7 +15,7 @@ export class HttpError extends Error {
 export function globalErrorHandler(
   error: FastifyError,
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   request.log.error(error);
 

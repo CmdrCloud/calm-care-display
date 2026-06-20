@@ -8,6 +8,6 @@ export default defineConfig({
   out: "./src/infrastructure/migrations",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432/carecircle",
+    url: process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5433/carecircle",
   },
 });

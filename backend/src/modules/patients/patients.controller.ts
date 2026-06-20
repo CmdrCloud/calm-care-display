@@ -50,10 +50,10 @@ export async function patientsRoutes(app: FastifyInstance) {
   app.post("/", async (request, reply) => {
     const familyId = getFamilyId(request);
     await request.requireMembership(familyId, ["admin", "editor"]);
-    
+
     const body = createPatientSchema.parse(request.body);
     const newPatient = await patientsService.createPatient(familyId, body);
-    
+
     return reply.status(201).send(newPatient);
   });
 
@@ -62,10 +62,10 @@ export async function patientsRoutes(app: FastifyInstance) {
     const familyId = getFamilyId(request);
     const { id } = request.params as { id: string };
     await request.requireMembership(familyId, ["admin", "editor"]);
-    
+
     const body = createPatientSchema.partial().parse(request.body);
     const updatedPatient = await patientsService.updatePatient(familyId, id, body);
-    
+
     return updatedPatient;
   });
 }

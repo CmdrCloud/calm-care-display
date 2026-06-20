@@ -4,11 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --watch src/server.ts",
+    "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "bun src/server.ts",
+    "start": "tsx src/server.ts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "tsx src/shared/database/seed.ts"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",
@@ -27,6 +28,7 @@
     "@types/node": "^20.12.12",
     "@types/pg": "^8.11.6",
     "drizzle-kit": "^0.21.4",
+    "tsx": "^4.22.4",
     "typescript": "^5.4.5"
   }
 }
