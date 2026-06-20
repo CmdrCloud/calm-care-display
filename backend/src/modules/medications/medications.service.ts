@@ -125,6 +125,7 @@ export class MedicationsService {
           scheduledTime: medications.scheduledTime,
           frequency: medications.frequency,
           notes: medications.notes,
+          patientId: medications.patientId,
         },
       })
       .from(medicationDoses)
