@@ -7,15 +7,32 @@ import { AlertTriangle, CheckCircle2, Info, Bell } from "lucide-react";
 import { notifications } from "@/shared/constants/mock-data";
 
 const iconFor = (type: string) =>
-  type === "missed" ? AlertTriangle : type === "confirmed" ? CheckCircle2 : type === "reminder" ? Bell : Info;
+  type === "missed"
+    ? AlertTriangle
+    : type === "confirmed"
+      ? CheckCircle2
+      : type === "reminder"
+        ? Bell
+        : Info;
 
 const toneFor = (type: string) =>
-  type === "missed" ? "bg-destructive/15 text-destructive"
-  : type === "confirmed" ? "bg-success/15 text-success"
-  : type === "reminder" ? "bg-warning/20 text-warning-foreground"
-  : "bg-primary/10 text-primary";
+  type === "missed"
+    ? "bg-destructive/15 text-destructive"
+    : type === "confirmed"
+      ? "bg-success/15 text-success"
+      : type === "reminder"
+        ? "bg-warning/20 text-warning-foreground"
+        : "bg-primary/10 text-primary";
 
-function Stat({ label, value, tone = "default" }: { label: string; value: string; tone?: "default" | "success" | "warning" | "destructive" }) {
+function Stat({
+  label,
+  value,
+  tone = "default",
+}: {
+  label: string;
+  value: string;
+  tone?: "default" | "success" | "warning" | "destructive";
+}) {
   const cls = {
     default: "text-primary",
     success: "text-success",
@@ -46,21 +63,32 @@ export function NotificationsPage() {
         <Card className="rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-base">Activity feed</CardTitle>
-            <Button variant="ghost" size="sm">Mark all read</Button>
+            <Button variant="ghost" size="sm">
+              Mark all read
+            </Button>
           </CardHeader>
           <CardContent className="space-y-2">
             {notifications.map((n) => {
               const Icon = iconFor(n.type);
               return (
-                <div key={n.id} className="flex items-start gap-3 rounded-xl border border-border p-3">
+                <div
+                  key={n.id}
+                  className="flex items-start gap-3 rounded-xl border border-border p-3"
+                >
                   <Avatar className="h-10 w-10">
-                    <AvatarFallback className={toneFor(n.type)}><Icon className="h-4 w-4" /></AvatarFallback>
+                    <AvatarFallback className={toneFor(n.type)}>
+                      <Icon className="h-4 w-4" />
+                    </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{n.title}</div>
-                    <div className="text-xs text-muted-foreground">{n.time} · {n.patient}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {n.time} · {n.patient}
+                    </div>
                   </div>
-                  <Badge variant="secondary" className="capitalize">{n.type}</Badge>
+                  <Badge variant="secondary" className="capitalize">
+                    {n.type}
+                  </Badge>
                 </div>
               );
             })}

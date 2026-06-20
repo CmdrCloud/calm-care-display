@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { AlarmClock, Clock } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
-import { nextMedication } from "@/shared/constants/mock-data";
 
 function getNextDoseDate(time: string) {
   const [h, m] = time.split(":").map(Number);
   const d = new Date();
-  d.setHours(h, m, 0, 0);
+  d.setHours(h, m || 0, 0, 0);
   if (d.getTime() < Date.now()) d.setDate(d.getDate() + 1);
   return d;
 }
@@ -15,22 +14,41 @@ function formatTime12(time: string) {
   const [h, m] = time.split(":").map(Number);
   const period = h >= 12 ? "PM" : "AM";
   const hh = ((h + 11) % 12) + 1;
-  return `${hh.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")} ${period}`;
+  return `${hh.toString().padStart(2, "0")}:${(m || 0).toString().padStart(2, "0")} ${period}`;
 }
 
-export function NextDoseTimer() {
-  const med = nextMedication();
-  const target = getNextDoseDate(med.time);
+export function NextDoseTimer({
+  med,
+  onConfirm,
+}: {
+  med?: { id: string; name: string; dose: string; time: string };
+  onConfirm?: (doseId: string) => void;
+}) {
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
+    if (!med) return;
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
-  }, []);
+  }, [med]);
+
+  if (!med) {
+    return (
+      <div className="relative overflow-hidden rounded-3xl bg-primary p-6 text-primary-foreground shadow-lg sm:p-8">
+        <p className="text-center text-sm opacity-95">No medications scheduled.</p>
+      </div>
+    );
+  }
+
+  const target = getNextDoseDate(med.time);
 
   const diff = Math.max(0, Math.floor((target.getTime() - now) / 1000));
-  const hh = Math.floor(diff / 3600).toString().padStart(2, "0");
-  const mm = Math.floor((diff % 3600) / 60).toString().padStart(2, "0");
+  const hh = Math.floor(diff / 3600)
+    .toString()
+    .padStart(2, "0");
+  const mm = Math.floor((diff % 3600) / 60)
+    .toString()
+    .padStart(2, "0");
   const ss = (diff % 60).toString().padStart(2, "0");
 
   const isToday = target.toDateString() === new Date().toDateString();
@@ -64,15 +82,18 @@ export function NextDoseTimer() {
             {isToday ? "Today" : "Tomorrow"}
           </span>
         </div>
-        <Button
-          size="lg"
-          variant="secondary"
-          className="h-auto rounded-2xl bg-white px-6 py-3 font-semibold leading-tight text-primary hover:bg-white/90"
-        >
-          Mark
-          <br />
-          Taken
-        </Button>
+        {onConfirm && (
+          <Button
+            size="lg"
+            variant="secondary"
+            onClick={() => onConfirm(med.id)}
+            className="h-auto rounded-2xl bg-white px-6 py-3 font-semibold leading-tight text-primary hover:bg-white/90"
+          >
+            Mark
+            <br />
+            Taken
+          </Button>
+        )}
       </div>
     </div>
   );

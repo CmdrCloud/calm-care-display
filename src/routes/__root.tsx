@@ -78,9 +78,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "CareCircle AI — Caregiver console" },
-      { name: "description", content: "Caregiving and medication reminders for family caregivers, with Raspberry Pi e-ink displays." },
+      {
+        name: "description",
+        content:
+          "Caregiving and medication reminders for family caregivers, with Raspberry Pi e-ink displays.",
+      },
       { property: "og:title", content: "CareCircle AI" },
-      { property: "og:description", content: "Caregiving and medication reminders for family caregivers." },
+      {
+        property: "og:description",
+        content: "Caregiving and medication reminders for family caregivers.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -88,7 +95,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -111,8 +121,20 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+import { api } from "@/shared/api/client";
+import { useRouterState, useNavigate } from "@tanstack/react-router";
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const routerState = useRouterState();
+  const navigate = useNavigate();
+  const path = routerState.location.pathname;
+
+  useEffect(() => {
+    if (!api.isAuthenticated() && path !== "/login") {
+      navigate({ to: "/login" });
+    }
+  }, [path, navigate]);
 
   return (
     <QueryClientProvider client={queryClient}>

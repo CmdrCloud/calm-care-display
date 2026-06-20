@@ -18,10 +18,16 @@ export function EinkPreviewPage() {
     <AppShell title="E-Ink Preview" subtitle="What the Raspberry Pi 3 display is showing right now">
       <div className="mx-auto max-w-5xl space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground">Monochrome · high contrast · low-power render</p>
+          <p className="text-sm text-muted-foreground">
+            Monochrome · high contrast · low-power render
+          </p>
           <div className="flex gap-2">
-            <Button variant="outline" className="rounded-full"><RefreshCw className="mr-2 h-4 w-4" /> Refresh</Button>
-            <Button className="rounded-full"><Send className="mr-2 h-4 w-4" /> Push to device</Button>
+            <Button variant="outline" className="rounded-full">
+              <RefreshCw className="mr-2 h-4 w-4" /> Refresh
+            </Button>
+            <Button className="rounded-full">
+              <Send className="mr-2 h-4 w-4" /> Push to device
+            </Button>
           </div>
         </div>
 

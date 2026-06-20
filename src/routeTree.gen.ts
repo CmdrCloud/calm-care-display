@@ -14,6 +14,7 @@ import { Route as RoutinesRouteImport } from './routes/routines'
 import { Route as PatientsRouteImport } from './routes/patients'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as MedicationsRouteImport } from './routes/medications'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as EinkPreviewRouteImport } from './routes/eink-preview'
 import { Route as DevicesRouteImport } from './routes/devices'
 import { Route as IndexRouteImport } from './routes/index'
@@ -43,6 +44,11 @@ const MedicationsRoute = MedicationsRouteImport.update({
   path: '/medications',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EinkPreviewRoute = EinkPreviewRouteImport.update({
   id: '/eink-preview',
   path: '/eink-preview',
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/devices': typeof DevicesRoute
   '/eink-preview': typeof EinkPreviewRoute
+  '/login': typeof LoginRoute
   '/medications': typeof MedicationsRoute
   '/notifications': typeof NotificationsRoute
   '/patients': typeof PatientsRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/devices': typeof DevicesRoute
   '/eink-preview': typeof EinkPreviewRoute
+  '/login': typeof LoginRoute
   '/medications': typeof MedicationsRoute
   '/notifications': typeof NotificationsRoute
   '/patients': typeof PatientsRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/devices': typeof DevicesRoute
   '/eink-preview': typeof EinkPreviewRoute
+  '/login': typeof LoginRoute
   '/medications': typeof MedicationsRoute
   '/notifications': typeof NotificationsRoute
   '/patients': typeof PatientsRoute
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/devices'
     | '/eink-preview'
+    | '/login'
     | '/medications'
     | '/notifications'
     | '/patients'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/devices'
     | '/eink-preview'
+    | '/login'
     | '/medications'
     | '/notifications'
     | '/patients'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/'
     | '/devices'
     | '/eink-preview'
+    | '/login'
     | '/medications'
     | '/notifications'
     | '/patients'
@@ -127,6 +139,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DevicesRoute: typeof DevicesRoute
   EinkPreviewRoute: typeof EinkPreviewRoute
+  LoginRoute: typeof LoginRoute
   MedicationsRoute: typeof MedicationsRoute
   NotificationsRoute: typeof NotificationsRoute
   PatientsRoute: typeof PatientsRoute
@@ -171,6 +184,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MedicationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/eink-preview': {
       id: '/eink-preview'
       path: '/eink-preview'
@@ -199,6 +219,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DevicesRoute: DevicesRoute,
   EinkPreviewRoute: EinkPreviewRoute,
+  LoginRoute: LoginRoute,
   MedicationsRoute: MedicationsRoute,
   NotificationsRoute: NotificationsRoute,
   PatientsRoute: PatientsRoute,

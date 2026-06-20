@@ -5,7 +5,10 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Dashboard — CareCircle AI" },
-      { name: "description", content: "Daily caregiving overview: medications, routines, and connected e-ink displays." },
+      {
+        name: "description",
+        content: "Daily caregiving overview: medications, routines, and connected e-ink displays.",
+      },
     ],
   }),
   component: DashboardPage,
