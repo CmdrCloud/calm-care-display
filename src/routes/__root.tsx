@@ -123,6 +123,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 import { api } from "@/shared/api/client";
 import { useRouterState, useNavigate } from "@tanstack/react-router";
+import { Toaster } from "@/shared/components/ui/sonner";
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
@@ -140,6 +141,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      <Toaster />
     </QueryClientProvider>
   );
 }

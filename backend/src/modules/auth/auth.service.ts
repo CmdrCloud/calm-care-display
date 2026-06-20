@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { eq } from "drizzle-orm";
 import { db } from "../../shared/database/db";
-import { users } from "../../shared/database/schema";
+import { users, familyMemberships } from "../../shared/database/schema";
 import { HttpError } from "../../shared/middleware/error.middleware";
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkeychangeinproduction";
@@ -28,9 +28,17 @@ export class AuthService {
     const accessToken = this.generateAccessToken(user.id, user.email);
     const refreshToken = this.generateRefreshToken(user.id, user.email);
 
+    // 4. Fetch family membership
+    const [membership] = await db
+      .select()
+      .from(familyMemberships)
+      .where(eq(familyMemberships.userId, user.id))
+      .limit(1);
+
     return {
       accessToken,
       refreshToken,
+      familyId: membership?.familyId || null,
       user: {
         id: user.id,
         email: user.email,

@@ -48,10 +48,11 @@ export function LoginPage() {
       const data = await api.post<{
         accessToken: string;
         refreshToken: string;
+        familyId?: string;
         user: { id: string; email: string; firstName: string; lastName: string };
       }>("/auth/login", { email, password });
 
-      api.setTokens(data.accessToken, data.refreshToken);
+      api.setTokens(data.accessToken, data.refreshToken, data.familyId);
       toast.success(`Welcome back, ${data.user.firstName}!`);
 
       // Redirect to dashboard
