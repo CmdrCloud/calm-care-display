@@ -1,0 +1,37 @@
+import Fastify from "fastify";
+import cors from "@fastify/cors";
+import { globalErrorHandler } from "./shared/middleware/error.middleware";
+import { requireMembershipHelper } from "./shared/middleware/auth.middleware";
+import { authRoutes } from "./modules/auth/auth.controller";
+import { patientsRoutes } from "./modules/patients/patients.controller";
+
+export function buildApp() {
+  const app = Fastify({
+    logger: true,
+  });
+
+  // CORS Configuration
+  app.register(cors, {
+    origin: true, // Echo back request origin
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-family-id"],
+    credentials: true,
+  });
+
+  // Register global error handler
+  app.setErrorHandler(globalErrorHandler);
+
+  // Decorate fastify request with tenant scope checkers
+  app.decorateRequest("requireMembership", requireMembershipHelper);
+
+  // Healthcheck Route
+  app.get("/health", async () => {
+    return { status: "OK", timestamp: new Date() };
+  });
+
+  // Register Auth and Care Module Routers
+  app.register(authRoutes, { prefix: "/auth" });
+  app.register(patientsRoutes, { prefix: "/patients" });
+
+  return app;
+}
