@@ -1,132 +1,109 @@
-# CareCircle AI — System Architecture
+# CareCircle AI — Arquitectura del Sistema
 
-This document describes the high-level system architecture, folder layouts, database structures, data flows, and security protocols of the **CareCircle AI** codebase.
+Este documento describe la arquitectura general del sistema, la estructura de carpetas, las estructuras de la base de datos, los flujos de datos y los protocolos de seguridad del código fuente de **CareCircle AI**.
+
+--
+
+## 1. Descripción general del sistema
+
+CareCircle AI es una plataforma de monitorización de la salud y coordinación de cuidadores diseñada para conectar a los cuidadores digitales con las personas que reciben atención domiciliaria. El sistema se compone de tres capas principales:
+1. **Consola Frontend**: Una SPA responsiva basada en React que utiliza TanStack Start para el enrutamiento y la hidratación del servidor, facilitando la gestión remota de la atención.
+
+2. **Backend Monolítico Modular**: Un backend ligero basado en Fastify + TypeScript que ofrece API REST y gestiona la sincronización del hardware.
+
+3. **Base de datos PostgreSQL**: Configurada con límites de aislamiento multiusuario, estructurada para sincronizar horarios y registros con dispositivos de tinta electrónica remotos.
+
+```
+
+┌───────────────────────────────────────────────────────┐
+
+│ Cliente de CareCircle │
+
+│ (Consola React / Aplicación para cuidadores) │
+└────────────────────────────┬───────────────────────────┘
+
+│
+
+│ HTTPS / REST (JSON)
+
+▼
+┌───────────────────────────────────────────────────────┐
+
+│ Backend monolítico de Fastify │
+
+│ (Validación JWT, verificación de roles, renderizador SSR) │
+└───────────────────────────┬───────────────────────────┘
+
+│
+├────────────────────────────┐
+
+Consultas SQL│ │ HTTP (flujo BMP/PNG)
+
+▼ ▼
+
+┌──────────────────────────────────┐ ┌───────────────────┐
+
+│ Base de datos PostgreSQL │ │ Raspberry Pi E-Ink│
+
+│ (Círculos de atención y aislamiento de inquilinos) │ │ (Habitación del paciente) │
+
+└──────────────────────────────────┘ └───────────────────┘
+```
 
 ---
 
-## 1. System Overview
+## 2. Estructura de directorios
 
-CareCircle AI is a health monitoring and caregiver coordination platform designed to bridge the gap between digital caregivers and in-home care recipients. The system is composed of three primary layers:
-1.  **Frontend Console**: A responsive React SPA using TanStack Start for server-side routing and hydration, facilitating remote care management.
-2.  **Modular Monolith Backend**: A lightweight Fastify + TypeScript backend serving REST APIs and managing hardware synchronizations.
-3.  **PostgreSQL Database**: Configured with multi-tenant isolation boundaries, structured to sync schedules and logs with remote e-ink devices.
-
-```
-       ┌────────────────────────────────────────────────────────┐
-       │                   CareCircle Client                    │
-       │            (React Console / Caregiver App)             │
-       └───────────────────────────┬────────────────────────────┘
-                                   │
-                                   │ HTTPS / REST (JSON)
-                                   ▼
-       ┌────────────────────────────────────────────────────────┐
-       │               Fastify Monolith Backend                 │
-       │   (JWT Validation, Role Verification, SSR Renderer)    │
-       └───────────────────────────┬────────────────────────────┘
-                                   │
-                                   ├────────────────────────────┐
-                         SQL Queries│                            │ HTTP (BMP/PNG Stream)
-                                   ▼                            ▼
-       ┌───────────────────────────────────┐          ┌───────────────────┐
-       │        PostgreSQL Database        │          │ Raspberry Pi E-Ink│
-       │ (Care Circles & Tenant Isolation) │          │  (Patient Room)   │
-       └───────────────────────────────────┘          └───────────────────┘
-```
-
----
-
-## 2. Directory Structure
-
-The repository is structured as a monorepo containing both the frontend compiler files at the root and the backend server files in a sub-folder.
+El repositorio está estructurado como un monorepo que contiene los archivos del compilador del frontend en la raíz y los archivos del servidor backend en una subcarpeta.
 
 ```
 CareCircle/
-├── backend/                    # Fastify Backend Service
-│   ├── src/
-│   │   ├── modules/            # Encapsulated Domain Modules
-│   │   │   ├── auth/           # Login & Token management
-│   │   │   ├── patients/       # Patient records & diagnostics
-│   │   │   └── ...             # Devices, medications, sync
-│   │   ├── shared/             # Cross-cutting code
-│   │   │   ├── database/       # Drizzle connector & schemas
-│   │   │   └── middleware/     # Global error & auth checkers
-│   │   ├── app.ts              # App router & plugin loader
-│   │   └── server.ts           # Server port binder
-│   ├── drizzle.config.ts       # Migration configurations
-│   └── package.json            # Backend dependency list
+├── backend/ # Servicio de backend de Fastify
+│ ├── src/
+│ │ ├── modules/ # Módulos de dominio encapsulados
+│ │ │ ├── auth/ # Gestión de inicio de sesión y tokens
+│ │ │ ├── patients/ # Registros y diagnósticos de pacientes
+│ │ │ └── ... # Dispositivos, medicamentos, sincronización
+│ │ ├── shared/ # Código transversal
+│ │ │ ├── database/ # Conector y esquemas de Drizzle
+│ │ │ └── middleware/ # Verificadores globales de errores y autenticación
+│ │ ├── app.ts # Enrutador de la aplicación y cargador de plugins
+│ │ └── server.ts # Enlazador de puertos del servidor
+│ ├── drizzle.config.ts # Configuraciones de migración
+│ └── package.json # Lista de dependencias del backend
 │
-├── src/                        # TanStack Start Frontend (React)
-│   ├── features/               # Module-based UI Features
-│   │   ├── dashboard/          # Dashboard analytics & feed
-│   │   ├── medications/        # Medicine scheduler components
-│   │   ├── routines/           # Daily timetable blocks
-│   │   └── ...                 # Settings, Eink, patients
-│   ├── routes/                 # File-based tanstack page routing
-│   ├── shared/                 # Shared hooks, UI, and constants
-│   ├── router.tsx              # Routing registration
-│   └── server.ts               # SSR entry point
+├── src/ # Frontend de inicio de TanStack (React)
+│ ├── features/ # Funcionalidades de la interfaz de usuario basadas en módulos
+│ │ ├── dashboard/ # Análisis y feed del panel de control
+│ │ ├── drugs/ # Componentes del programador de medicamentos
+│ │ ├── rutinas/ # Bloques de horario diario
+│ │ └── ... # Configuración, Eink, pacientes
+│ ├── rutas/ # Enrutamiento de páginas en tanstack basado en archivos
+│ ├── compartido/ # Ganchos compartidos, interfaz de usuario y constantes
+│ ├── router.tsx # Registro de enrutamiento
+│ └── server.ts # Punto de entrada SSR
 │
-├── supabase/                   # Database Migration Files
-│   ├── migrations/             # SQL schema scripts
-│   └── seed.sql                # Timezone-aware mock seed data
+├── supabase/ # Archivos de migración de base de datos
+│ ├── migraciones/ # Scripts de esquema SQL
+│ └── seed.sql # Datos de semilla simulados con información de zona horaria
 │
-├── ARCHITECTURE.md             # This document
-└── package.json                # Frontend compiler details
+├── ARCHITECTURE.md # Este documento
+└── package.json # Compilador de frontend Detalles
 ```
 
 ---
 
-## 3. Frontend Architecture (TanStack Start)
+## 3. Arquitectura de Frontend (TanStack Start)
 
-The client is built using React and **TanStack Start**, bringing SSR capabilities to file-based routing:
-*   **Routing (`/src/routes`)**: Uses TanStack Router's file-based route definitions (`index.tsx`, `medications.tsx`, `patients.tsx`, `eink-preview.tsx`).
-*   **Domain Modularity (`/src/features`)**: UI code is organized by feature rather than type. Each directory (e.g. `medications/`) contains its own sub-folders for `components`, `hooks`, `pages`, and `services` to keep components highly focused and cohesive.
-*   **Shared UI Elements (`/src/shared/components/ui`)**: Predefined styling tokens (buttons, alerts, tables, sidebars) configured via Tailwind CSS to ensure interface consistency.
+El cliente se desarrolla con React y **TanStack Start**, lo que proporciona capacidades de renderizado del lado del servidor (SSR) para el enrutamiento basado en archivos:
+* **Enrutamiento (`/src/routes`)**: Utiliza las definiciones de ruta basadas en archivos de TanStack Router (`index.tsx`, `medications.tsx`, `patients.tsx`, `eink-preview.tsx`).
 
----
+* **Modularidad de dominio (`/src/features`)**: El código de la interfaz de usuario se organiza por funcionalidad en lugar de por tipo. Cada directorio (por ejemplo, `medications/`) contiene sus propias subcarpetas para `componentes`, `hooks`, `páginas` y `servicios` para mantener los componentes altamente enfocados y cohesivos.
+* **Elementos de interfaz de usuario compartidos (`/src/shared/components/ui`)**: Tokens de estilo predefinidos (botones, alertas, tablas, barras laterales) configurados mediante Tailwind CSS para garantizar la coherencia de la interfaz.
 
-## 4. Backend Architecture (Modular Monolith)
+--
 
-The backend is built as a **Modular Monolith** using Fastify and Drizzle ORM to keep deployments simple while maintaining a clean boundary for future microservice splits:
-*   **Encapsulated Modules (`/backend/src/modules`)**: Business logic is separated into domains. Each folder contains its own route controller and service layer. Dependencies between modules occur at the service layer, keeping route controllers isolated.
-*   **Drizzle ORM Schema (`/backend/src/shared/database/schema.ts`)**: Reflects the database schema directly. Types are inferred from schema definitions, guaranteeing complete type safety from the repository layer to the controller.
-*   **Request Pipeline**:
-    1.  **Auth Verification**: JWT tokens are decoded. The authenticated user payload is attached to the request.
-    2.  **Tenant Scope Check**: A custom Fastify decorator (`request.requireMembership(familyId, roles)`) verifies that the caregiver belongs to the target family scope with appropriate permission credentials before executing queries.
-    3.  **Validation**: Raw payloads are sanitized and validated using **Zod** models.
-    4.  **Error Propagation**: Any thrown errors (unauthorized, validation, DB foreign key violations) bubble up to `error.middleware.ts` to return uniform client responses.
+## 4. Arquitectura de backend (monolito modular)
 
----
-
-## 5. Database Architecture & Multi-Tenancy
-
-The target database is **PostgreSQL**, partitioned around a multi-tenant isolation scheme:
-*   **The Family Tenant Boundary**: The core tenant is the `Family` (Care Circle). All data (patients, devices, medications, routines) references a `family_id`. 
-*   **Decoupled Telemetry**: Connection status and battery logs from Raspberry Pi terminals are isolated into `device_sync_states`. This write-heavy status tracking is kept separate from the read-heavy configuration table `devices` to avoid locking rows or bloating indexes.
-*   **Occurrences Scheduling**: Baseline care rules are stored as templates in `medications` and `routines`. Concrete logs (e.g., whether Eleanor Hayes took Lisinopril today at 08:00) are stored in `medication_doses`, pre-generated 48 hours in advance by a background worker using the family's target timezone.
-
----
-
-## 6. E-Ink Display Synchronization Protocol
-
-Synchronization between the server and the local Raspberry Pi 3 hardware utilizes a secure, low-overhead REST protocol:
-1.  **Pairing Handshake**: 
-    *   Caregiver registers a device and receives a 6-digit `pairing_code`.
-    *   The Pi pings the server with the code, retrieves a persistent hashed connection key (`DeviceKey`), and saves it locally.
-2.  **Heartbeat Telemetry**: 
-    *   The Pi polls the server periodically (every 5-15 minutes).
-    *   The request logs IP address, power source, and battery levels into `device_sync_states`.
-3.  **Server-Side Layout Rendering (SSR)**:
-    *   Rather than parsing JSON on the Pi, the backend renders layouts server-side.
-    *   The backend pulls current schedules, renders the `/eink-preview` component via a headless browser engine, converts it to a high-contrast 1-bit BMP/PNG stream, and sends it to the Pi.
-    *   This reduces the Pi script to a basic download-and-print routine, eliminating firmware updates when changing layouts.
-
----
-
-## 7. Security & Compliance (HIPAA Ready)
-
-To protect sensitive health information, the architecture incorporates the following safeguards:
-*   **Row-Level Tenant Isolation**: Database access requires a validated `x-family-id` header matching the user's validated membership.
-*   **Stateless JWT Authentication**: Implements short-lived access tokens (15 minutes) with rotating refresh tokens (7 days) stored securely.
-*   **Cryptographic Key Hashing**: Pi sync keys are stored as SHA-256 hashes (`device_key_hash`). If the database is compromised, hardware keys cannot be extracted.
-*   **Detailed Audit Logging**: An `audit_logs` ledger tracks administrative actions (schedule changes, caregiver invites, profile changes) with before-and-after JSON state snapshots.
+El backend se construye como un **monolito modular** utilizando Fastify y Drizzle ORM para simplificar las implementaciones y mantener una clara separación para futuras divisiones de microservicios:
+* **Módulos encapsulados (`/backend/src/modules`)**: La lógica de negocio se separa en dominios. Cada carpeta
