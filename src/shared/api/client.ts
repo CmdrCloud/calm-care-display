@@ -1,5 +1,4 @@
-// HTTP API Client for CareCircle AI Fastify Backend
-const BASE_URL = "http://localhost:3001";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 // Default family ID (Hayes Family seeded ID)
 export const DEFAULT_FAMILY_ID = "11111111-1111-1111-1111-111111111111";

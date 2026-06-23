@@ -1,0 +1,62 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: carecircle-prod-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-carecircle_secure_pass_123}
+      POSTGRES_DB: ${DB_NAME:-carecircle}
+    volumes:
+      - pgdata-prod:/var/lib/postgresql/data
+    networks:
+      - carecircle-net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: carecircle-prod-backend
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-carecircle_secure_pass_123}@postgres:5432/${DB_NAME:-carecircle}
+      JWT_SECRET: ${JWT_SECRET:-please_change_this_to_a_long_random_string_1}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-please_change_this_to_a_long_random_string_2}
+      PORT: 3001
+      HOST: 0.0.0.0
+      NODE_ENV: production
+    ports:
+      - "3001:3001"
+    command: sh -c "node dist/shared/database/migrate.js && node dist/server.js"
+    networks:
+      - carecircle-net
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3001}
+    container_name: carecircle-prod-frontend
+    restart: always
+    depends_on:
+      - backend
+    environment:
+      PORT: 3000
+      HOST: 0.0.0.0
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    networks:
+      - carecircle-net
+
+volumes:
+  pgdata-prod:
+
+networks:
+  carecircle-net:
+    driver: bridge
