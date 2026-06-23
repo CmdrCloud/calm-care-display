@@ -1,36 +1,22 @@
 # Guía Completa de Despliegue en Producción (VPS)
 
-Esta guía detalla el análisis del estado del proyecto **CareCircle AI** y proporciona todas las configuraciones y pasos necesarios para desplegarlo en un Servidor Virtual Privado (VPS) utilizando Docker Compose y Nginx de forma robusta y segura.
+Esta guía detalla el análisis del estado del proyecto **CareCircle AI** y proporciona todas las configuraciones y pasos necesarios para desplegarlo en tu Servidor Virtual Privado (VPS) utilizando Docker Compose y Nginx bajo el dominio **admin.sisganadero.online**.
 
 ---
 
-## 🔍 Análisis de Readiness (¿Está listo para subir?)
+## 🔍 Correcciones y Análisis de Readiness
 
-El proyecto original estaba configurado principalmente para desarrollo local. Para que esté **listo para subir a producción**, hemos realizado e implementado las siguientes mejoras críticas:
+Para que el proyecto esté **listo para subir a producción**, hemos implementado correcciones críticas basadas en los errores comunes de despliegue:
 
-1. **API Base URL configurable**:
-   - **Problema**: La URL del backend estaba hardcodeada como `http://localhost:3011` en el cliente.
-   - **Solución**: Modificamos el cliente de API para usar `import.meta.env.VITE_API_URL` con un fallback a `localhost:3011`. Ahora se puede inyectar la URL pública del backend en tiempo de compilación.
+1. **Resolución de Módulos Node (Docker Fix)**:
+   - **Problema**: El backend utilizaba `"type": "module"` en `package.json` pero los archivos importaban código sin extensiones explícitas (ej. `import { app } from "./app"` en lugar de `./app.js`). Esto compilaba correctamente con TypeScript pero generaba el error `ERR_MODULE_NOT_FOUND` al ejecutarlo con Node.js en Docker.
+   - **Solución**: Configuramos el compilador de TypeScript para emitir **CommonJS** y eliminamos `"type": "module"` en el backend. Ahora las importaciones se resuelven de forma nativa a nivel de archivo compilado sin romper rutas.
 
-2. **Servidor SSR Standalone (Nitro)**:
-   - **Problema**: La compilación de frontend por defecto estaba omitiendo el empaquetado de producción de Nitro.
-   - **Solución**: Habilitamos `nitro: true` en `vite.config.ts`. Al compilar utilizando el preset `node-server` (`NITRO_PRESET=node-server`), se genera un servidor Node.js autónomo en la carpeta `.output/` optimizado para producción.
+2. **API Base URL configurable**:
+   - **Solución**: El cliente frontend utiliza `import.meta.env.VITE_API_URL` con un fallback. Inyectamos la URL pública de producción (`https://admin.sisganadero.online/api`) durante la etapa de construcción de la imagen Docker de frontend.
 
 3. **Migraciones de Base de Datos automatizadas**:
-   - **Problema**: `drizzle-kit` es una dependencia de desarrollo y no es óptimo ejecutarla directamente en producción.
-   - **Solución**: Creamos un script de migración programática `migrate.ts` en el backend. Al iniciar el contenedor del backend, este script se ejecuta automáticamente para aplicar cualquier migración pendiente sobre PostgreSQL antes de levantar Fastify.
-
----
-
-## 🛠️ Archivos de Configuración Creados
-
-Hemos creado los siguientes archivos en la raíz del proyecto para automatizar el despliegue:
-
-* **Dockerfile**: Compilación en múltiples etapas (multi-stage) que inyecta la URL de API de producción y expone el servidor SSR en el puerto `3010`.
-* **backend/Dockerfile**: Compilación TypeScript en multi-stage y ejecución ligera con Node.js en el puerto `3011`.
-* **docker-compose.prod.yml**: Orquestación de contenedores (PostgreSQL 16, Fastify Backend y TanStack Start Frontend) con persistencia de datos mediante volúmenes.
-* **.env.production**: Plantilla de variables de entorno para producción (Credenciales de DB, secretos JWT y URL de la API).
-* **nginx.conf**: Configuración del proxy inverso Nginx para dirigir el tráfico de dominio, gestionar SSL (HTTPS) y redirigir `/api/*` al backend de Fastify y el resto de las rutas al frontend de SSR.
+   - **Solución**: El contenedor del backend ejecuta automáticamente el script de migración programática `migrate.js` antes de iniciar Fastify para asegurar que las tablas en PostgreSQL existan y estén actualizadas.
 
 ---
 
@@ -38,8 +24,12 @@ Hemos creado los siguientes archivos en la raíz del proyecto para automatizar e
 
 Sigue estos pasos detallados para configurar y lanzar tu proyecto en producción:
 
-### Paso 1: Preparar el VPS
-1. Accede a tu VPS mediante SSH.
+### Paso 1: Preparar el VPS y Dependencias
+1. Accede a tu VPS mediante SSH desde tu terminal local:
+   ```bash
+   ssh fernando@62.84.184.67
+   # Ingresa tu contraseña: Blaydor_2001
+   ```
 2. Asegúrate de tener instalado **Docker** y **Docker Compose**:
    ```bash
    # En Debian/Ubuntu:
@@ -47,83 +37,98 @@ Sigue estos pasos detallados para configurar y lanzar tu proyecto en producción
    sudo apt install -y docker.io docker-compose-plugin
    sudo systemctl enable --now docker
    ```
-3. Instala **Nginx** si deseas usar el proxy inverso estándar:
+3. Instala **Nginx** y **Certbot** para la gestión del dominio y certificados SSL:
    ```bash
    sudo apt install -y nginx certbot python3-certbot-nginx
    ```
 
-### Paso 2: Clonar y Configurar el Proyecto
-1. Clona tu repositorio en el VPS:
+### Paso 2: Configurar el Repositorio en tu VPS
+1. Si aún no has clonado el repositorio en el VPS:
    ```bash
-   git clone <URL_DE_TU_REPOSITORIO> /var/www/carecircle
+   git clone https://github.com/CmdrCloud/calm-care-display /var/www/carecircle
    cd /var/www/carecircle
    ```
-2. Crea el archivo de variables de entorno definitivo:
+2. Si ya lo tenías clonado, simplemente actualízalo con las correcciones de CommonJS y dominio:
+   ```bash
+   cd /var/www/carecircle
+   git pull origin main
+   ```
+
+### Paso 3: Configurar las Variables de Entorno (.env)
+1. Crea el archivo de variables definitivo a partir del de producción:
    ```bash
    cp .env.production .env
    ```
-3. Edita el archivo `.env` con tus credenciales de producción:
+2. Edítalo para asegurarte de que las contraseñas e identificadores sean seguros y de que la URL de la API apunte a tu dominio:
    ```bash
    nano .env
    ```
-   > [!IMPORTANT]
-   > - Cambia `DB_PASSWORD` por una contraseña segura.
-   > - Genera claves seguras para `JWT_SECRET` y `JWT_REFRESH_SECRET` (puedes usar `openssl rand -hex 64`).
-   > - Define `VITE_API_URL` con tu dominio definitivo seguido de `/api` (ej. `https://tudominio.com/api`).
+   *Verifica que contenga el dominio correcto para la API:*
+   ```env
+   VITE_API_URL=https://admin.sisganadero.online/api
+   ```
 
-### Paso 3: Levantar los Contenedores
-Ejecuta Docker Compose para construir las imágenes y levantar la base de datos, backend y frontend en segundo plano:
+### Paso 4: Levantar los Contenedores Docker
+Construye las imágenes con la configuración CommonJS y levanta los servicios en segundo plano:
 ```bash
+# Si había contenedores previos activos, detenlos
+docker compose -f docker-compose.prod.yml down
+
+# Construye e inicia los contenedores
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-Esto realizará los siguientes pasos de forma automática:
-1. Iniciará PostgreSQL y creará la base de datos y volumen persistente.
-2. Compilará el backend en TS, ejecutará el script de migración para estructurar las tablas, e iniciará Fastify en el puerto `3011`.
-3. Compilará el frontend inyectando la URL de producción e iniciará el servidor SSR en el puerto `3010`.
+Esto realizará automáticamente:
+1. Inicio de PostgreSQL (`carecircle-prod-db`).
+2. Compilación del Backend y ejecución de migraciones de la DB, levantando Fastify en el puerto `3011`.
+3. Compilación del Frontend inyectando la URL de producción y levantando el servidor SSR en el puerto `3010`.
 
-### Paso 4: (Opcional) Sembrar Datos de Prueba
-Si deseas rellenar la base de datos con los datos de prueba iniciales (usuarios, pacientes y configuraciones de demostración):
+Para revisar que el backend y las migraciones se hayan iniciado sin errores de módulos:
+```bash
+docker compose -f docker-compose.prod.yml logs -f backend
+```
+
+*(Opcional) Si necesitas sembrar datos de prueba iniciales:*
 ```bash
 docker compose -f docker-compose.prod.yml exec backend node dist/shared/database/seed.js
 ```
 
-### Paso 5: Configurar Nginx y Certificados SSL (HTTPS)
-1. Copia la plantilla de Nginx a los sitios disponibles:
+### Paso 5: Configurar el Proxy Inverso Nginx y SSL (HTTPS)
+1. Copia el archivo `nginx.conf` actualizado al directorio de Nginx:
    ```bash
    sudo cp nginx.conf /etc/nginx/sites-available/carecircle
    ```
-2. Edita la configuración de Nginx para reemplazar `yourdomain.com` con tu dominio real:
-   ```bash
-   sudo nano /etc/nginx/sites-available/carecircle
-   ```
-3. Habilita el sitio y reinicia Nginx:
+2. Crea el enlace simbólico para habilitar el sitio:
    ```bash
    sudo ln -s /etc/nginx/sites-available/carecircle /etc/nginx/sites-enabled/
-   sudo nginx -t # Verifica que la sintaxis sea correcta
-   sudo systemctl restart nginx
    ```
-4. Genera certificados SSL automáticos y gratuitos con Let's Encrypt:
+3. Verifica la sintaxis de la configuración de Nginx:
    ```bash
-   sudo certbot --nginx -d tudominio.com -d www.tudominio.com
+   sudo nginx -t
    ```
-   *Certbot modificará automáticamente tu archivo de configuración de Nginx para añadir las rutas SSL correspondientes.*
+4. Si la prueba es correcta, recarga Nginx:
+   ```bash
+   sudo systemctl reload nginx
+   ```
+5. Obtén y configura el certificado SSL automáticamente para tu dominio con Let's Encrypt:
+   ```bash
+   sudo certbot --nginx -d admin.sisganadero.online
+   ```
+   *Certbot modificará automáticamente tu archivo de Nginx para redirigir todo el tráfico HTTP a HTTPS de forma segura y configurar los certificados.*
 
 ---
 
 ## 🔒 Monitoreo y Mantenimiento
 
-- **Ver logs de los servicios**:
+- **Ver logs de todos los servicios**:
   ```bash
   docker compose -f docker-compose.prod.yml logs -f
-  # Logs específicos del backend:
-  docker compose -f docker-compose.prod.yml logs -f backend
   ```
-- **Detener los servicios**:
+- **Detener la aplicación**:
   ```bash
   docker compose -f docker-compose.prod.yml down
   ```
-- **Actualizar el código**:
+- **Actualizar código y redesplegar**:
   ```bash
   git pull origin main
   docker compose -f docker-compose.prod.yml up -d --build
