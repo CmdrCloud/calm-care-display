@@ -1,6 +1,6 @@
 # Guía Completa de Despliegue en Producción (VPS)
 
-Esta guía detalla el análisis del estado del proyecto **CareCircle AI** y proporciona todas las configuraciones y pasos necesarios para desplegarlo en tu Servidor Virtual Privado (VPS) utilizando Docker Compose y Nginx bajo el dominio **admin.sisganadero.online**.
+Esta guía detalla el análisis del estado del proyecto **CareCircle AI** y proporciona todas las configuraciones y pasos necesarios para desplegarlo en tu Servidor Virtual Privado (VPS) utilizando Docker Compose y Nginx bajo el dominio **prueba.sisganadero.online**.
 
 ---
 
@@ -13,7 +13,7 @@ Para que el proyecto esté **listo para subir a producción**, hemos implementad
    - **Solución**: Configuramos el compilador de TypeScript para emitir **CommonJS** y eliminamos `"type": "module"` en el backend. Ahora las importaciones se resuelven de forma nativa a nivel de archivo compilado sin romper rutas.
 
 2. **API Base URL configurable**:
-   - **Solución**: El cliente frontend utiliza `import.meta.env.VITE_API_URL` con un fallback. Inyectamos la URL pública de producción (`https://admin.sisganadero.online/api`) durante la etapa de construcción de la imagen Docker de frontend.
+   - **Solución**: El cliente frontend utiliza `import.meta.env.VITE_API_URL` con un fallback. Inyectamos la URL pública de producción (`https://prueba.sisganadero.online/api`) durante la etapa de construcción de la imagen Docker de frontend.
 
 3. **Migraciones de Base de Datos automatizadas**:
    - **Solución**: El contenedor del backend ejecuta automáticamente el script de migración programática `migrate.js` antes de iniciar Fastify para asegurar que las tablas en PostgreSQL existan y estén actualizadas.
@@ -65,7 +65,7 @@ Sigue estos pasos detallados para configurar y lanzar tu proyecto en producción
    ```
    *Verifica que contenga el dominio correcto para la API:*
    ```env
-   VITE_API_URL=https://admin.sisganadero.online/api
+   VITE_API_URL=https://prueba.sisganadero.online/api
    ```
 
 ### Paso 4: Levantar los Contenedores Docker
@@ -112,7 +112,7 @@ docker-compose -f docker-compose.prod.yml exec backend node dist/shared/database
    ```
 5. Obtén y configura el certificado SSL automáticamente para tu dominio con Let's Encrypt:
    ```bash
-   sudo certbot --nginx -d admin.sisganadero.online
+   sudo certbot --nginx -d prueba.sisganadero.online
    ```
    *Certbot modificará automáticamente tu archivo de Nginx para redirigir todo el tráfico HTTP a HTTPS de forma segura y configurar los certificados.*
 
