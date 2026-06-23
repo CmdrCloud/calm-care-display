@@ -9,8 +9,8 @@ Esta guía detalla el análisis del estado del proyecto **CareCircle AI** y prop
 El proyecto original estaba configurado principalmente para desarrollo local. Para que esté **listo para subir a producción**, hemos realizado e implementado las siguientes mejoras críticas:
 
 1. **API Base URL configurable**:
-   - **Problema**: La URL del backend estaba hardcodeada como `http://localhost:3001` en el cliente.
-   - **Solución**: Modificamos el cliente de API para usar `import.meta.env.VITE_API_URL` con un fallback a `localhost:3001`. Ahora se puede inyectar la URL pública del backend en tiempo de compilación.
+   - **Problema**: La URL del backend estaba hardcodeada como `http://localhost:3011` en el cliente.
+   - **Solución**: Modificamos el cliente de API para usar `import.meta.env.VITE_API_URL` con un fallback a `localhost:3011`. Ahora se puede inyectar la URL pública del backend en tiempo de compilación.
 
 2. **Servidor SSR Standalone (Nitro)**:
    - **Problema**: La compilación de frontend por defecto estaba omitiendo el empaquetado de producción de Nitro.
@@ -26,8 +26,8 @@ El proyecto original estaba configurado principalmente para desarrollo local. Pa
 
 Hemos creado los siguientes archivos en la raíz del proyecto para automatizar el despliegue:
 
-* **Dockerfile**: Compilación en múltiples etapas (multi-stage) que inyecta la URL de API de producción y expone el servidor SSR en el puerto `3000`.
-* **backend/Dockerfile**: Compilación TypeScript en multi-stage y ejecución ligera con Node.js en el puerto `3001`.
+* **Dockerfile**: Compilación en múltiples etapas (multi-stage) que inyecta la URL de API de producción y expone el servidor SSR en el puerto `3010`.
+* **backend/Dockerfile**: Compilación TypeScript en multi-stage y ejecución ligera con Node.js en el puerto `3011`.
 * **docker-compose.prod.yml**: Orquestación de contenedores (PostgreSQL 16, Fastify Backend y TanStack Start Frontend) con persistencia de datos mediante volúmenes.
 * **.env.production**: Plantilla de variables de entorno para producción (Credenciales de DB, secretos JWT y URL de la API).
 * **nginx.conf**: Configuración del proxy inverso Nginx para dirigir el tráfico de dominio, gestionar SSL (HTTPS) y redirigir `/api/*` al backend de Fastify y el resto de las rutas al frontend de SSR.
@@ -79,8 +79,8 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 Esto realizará los siguientes pasos de forma automática:
 1. Iniciará PostgreSQL y creará la base de datos y volumen persistente.
-2. Compilará el backend en TS, ejecutará el script de migración para estructurar las tablas, e iniciará Fastify en el puerto `3001`.
-3. Compilará el frontend inyectando la URL de producción e iniciará el servidor SSR en el puerto `3000`.
+2. Compilará el backend en TS, ejecutará el script de migración para estructurar las tablas, e iniciará Fastify en el puerto `3011`.
+3. Compilará el frontend inyectando la URL de producción e iniciará el servidor SSR en el puerto `3010`.
 
 ### Paso 4: (Opcional) Sembrar Datos de Prueba
 Si deseas rellenar la base de datos con los datos de prueba iniciales (usuarios, pacientes y configuraciones de demostración):

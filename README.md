@@ -250,11 +250,11 @@ Estos endpoints están diseñados para ser consumidos por el dispositivo Raspber
 2. Configura las variables de entorno. Puedes usar el archivo `.env` ya creado por defecto con los siguientes valores para desarrollo local:
 
    ```env
-   PORT=3001
-   DATABASE_URL=postgres://postgres:postgres@localhost:5433/carecircle
-   JWT_SECRET=supersecretkeychangeinproduction
-   JWT_REFRESH_SECRET=supersecretrefreshkeychangeinproduction
-   ```
+    PORT=3011
+    DATABASE_URL=postgres://postgres:postgres@localhost:5433/carecircle
+    JWT_SECRET=supersecretkeychangeinproduction
+    JWT_REFRESH_SECRET=supersecretrefreshkeychangeinproduction
+    ```
 
 3. Ejecuta el servidor en modo desarrollo:
 
@@ -262,7 +262,7 @@ Estos endpoints están diseñados para ser consumidos por el dispositivo Raspber
    npm run dev
    ```
 
-   El backend se ejecutará en `http://localhost:3001`. Puedes verificar el estado en `http://localhost:3001/health`.
+   El backend se ejecutará en `http://localhost:3011`. Puedes verificar el estado en `http://localhost:3011/health`.
 
 ---
 
@@ -280,4 +280,4 @@ Estos endpoints están diseñados para ser consumidos por el dispositivo Raspber
    npm run dev
    ```
 
-3. Abre el navegador en la URL provista por Vite (usualmente `http://localhost:3000` o `http://localhost:5173`) para acceder a la consola.
+3. Abre el navegador en la URL provista por Vite (usualmente `http://localhost:3010` o `http://localhost:5173`) para acceder a la consola.

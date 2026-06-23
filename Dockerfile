@@ -29,7 +29,7 @@ ENV NODE_ENV=production
 # Copy output from builder stage
 COPY --from=builder /app/.output ./.output
 
-# TanStack Start / Nitro runs on port 3000 by default
-EXPOSE 3000
+# TanStack Start / Nitro runs on port 3010 in production (mapped via PORT env)
+EXPOSE 3010
 
 CMD ["node", ".output/server/index.mjs"]

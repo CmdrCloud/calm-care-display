@@ -29,7 +29,7 @@ RUN npm ci --omit=dev
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/src/infrastructure/migrations ./src/infrastructure/migrations
 
-# Fastify runs on port 3001 by default
-EXPOSE 3001
+# Fastify runs on port 3011 by default (mapped via PORT env)
+EXPOSE 3011
 
 CMD ["node", "dist/server.js"]

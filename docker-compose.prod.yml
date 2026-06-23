@@ -26,11 +26,11 @@ services:
       DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-carecircle_secure_pass_123}@postgres:5432/${DB_NAME:-carecircle}
       JWT_SECRET: ${JWT_SECRET:-please_change_this_to_a_long_random_string_1}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-please_change_this_to_a_long_random_string_2}
-      PORT: 3001
+      PORT: 3011
       HOST: 0.0.0.0
       NODE_ENV: production
     ports:
-      - "3001:3001"
+      - "3011:3011"
     command: sh -c "node dist/shared/database/migrate.js && node dist/server.js"
     networks:
       - carecircle-net
@@ -40,17 +40,17 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:3001}
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3011}
     container_name: carecircle-prod-frontend
     restart: always
     depends_on:
       - backend
     environment:
-      PORT: 3000
+      PORT: 3010
       HOST: 0.0.0.0
       NODE_ENV: production
     ports:
-      - "3000:3000"
+      - "3010:3010"
     networks:
       - carecircle-net
 
