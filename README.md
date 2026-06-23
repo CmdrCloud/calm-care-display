@@ -221,7 +221,7 @@ Estos endpoints están diseñados para ser consumidos por el dispositivo Raspber
 1. Levanta el contenedor de PostgreSQL (mapeado al puerto `5433` de forma segura):
 
    ```bash
-   docker compose up -d
+   docker-compose up -d
    ```
 
 2. Dirígete a la carpeta del backend y ejecuta las migraciones de Drizzle para crear el esquema en la base de datos:

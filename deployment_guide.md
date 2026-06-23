@@ -34,7 +34,7 @@ Sigue estos pasos detallados para configurar y lanzar tu proyecto en producción
    ```bash
    # En Debian/Ubuntu:
    sudo apt update
-   sudo apt install -y docker.io docker-compose-plugin
+   sudo apt install -y docker.io docker-compose
    sudo systemctl enable --now docker
    ```
 3. Instala **Nginx** y **Certbot** para la gestión del dominio y certificados SSL:
@@ -72,10 +72,10 @@ Sigue estos pasos detallados para configurar y lanzar tu proyecto en producción
 Construye las imágenes con la configuración CommonJS y levanta los servicios en segundo plano:
 ```bash
 # Si había contenedores previos activos, detenlos
-docker compose -f docker-compose.prod.yml down
+docker-compose -f docker-compose.prod.yml down
 
 # Construye e inicia los contenedores
-docker compose -f docker-compose.prod.yml up -d --build
+docker-compose -f docker-compose.prod.yml up -d --build
 ```
 
 Esto realizará automáticamente:
@@ -85,12 +85,12 @@ Esto realizará automáticamente:
 
 Para revisar que el backend y las migraciones se hayan iniciado sin errores de módulos:
 ```bash
-docker compose -f docker-compose.prod.yml logs -f backend
+docker-compose -f docker-compose.prod.yml logs -f backend
 ```
 
 *(Opcional) Si necesitas sembrar datos de prueba iniciales:*
 ```bash
-docker compose -f docker-compose.prod.yml exec backend node dist/shared/database/seed.js
+docker-compose -f docker-compose.prod.yml exec backend node dist/shared/database/seed.js
 ```
 
 ### Paso 5: Configurar el Proxy Inverso Nginx y SSL (HTTPS)
@@ -122,14 +122,14 @@ docker compose -f docker-compose.prod.yml exec backend node dist/shared/database
 
 - **Ver logs de todos los servicios**:
   ```bash
-  docker compose -f docker-compose.prod.yml logs -f
+  docker-compose -f docker-compose.prod.yml logs -f
   ```
 - **Detener la aplicación**:
   ```bash
-  docker compose -f docker-compose.prod.yml down
+  docker-compose -f docker-compose.prod.yml down
   ```
 - **Actualizar código y redesplegar**:
   ```bash
   git pull origin main
-  docker compose -f docker-compose.prod.yml up -d --build
+  docker-compose -f docker-compose.prod.yml up -d --build
   ```
