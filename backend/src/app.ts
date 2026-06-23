@@ -8,6 +8,7 @@ import { medicationsRoutes } from "./modules/medications/medications.controller"
 import { routinesRoutes } from "./modules/routines/routines.controller";
 import { devicesRoutes } from "./modules/devices/devices.controller";
 import { notificationsRoutes } from "./modules/notifications/notifications.controller";
+import { piRoutes } from "./modules/devices/pi.controller";
 
 export function buildApp() {
   const app = Fastify({
@@ -18,7 +19,7 @@ export function buildApp() {
   app.register(cors, {
     origin: true, // Echo back request origin
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-family-id"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-family-id", "x-device-key"],
     credentials: true,
   });
 
@@ -39,6 +40,7 @@ export function buildApp() {
   app.register(medicationsRoutes, { prefix: "/medications" });
   app.register(routinesRoutes, { prefix: "/routines" });
   app.register(devicesRoutes, { prefix: "/devices" });
+  app.register(piRoutes, { prefix: "/pi" });
   app.register(notificationsRoutes, { prefix: "/notifications" });
 
   return app;

@@ -158,43 +158,52 @@ CareCircle/
 ## 📡 Endpoints de la API (REST API)
 
 Todas las peticiones a la API (a excepción del módulo de autenticación) deben incluir los siguientes encabezados:
-*   `Authorization: Bearer <JWT_ACCESS_TOKEN>`: Token de acceso obtenido al iniciar sesión.
-*   `x-family-id: <FAMILY_UUID>`: Identificador del círculo familiar sobre el cual se operará.
+- `Authorization: Bearer <JWT_ACCESS_TOKEN>`: Token de acceso obtenido al iniciar sesión.
+- `x-family-id: <FAMILY_UUID>`: Identificador del círculo familiar sobre el cual se operará.
 
 A continuación se detallan los endpoints disponibles divididos por módulos lógicos:
 
 ### 1. Autenticación (`/auth`)
-*   `POST /auth/login`: Autentica a un cuidador con su `email` y `password`. Devuelve los tokens JWT (`accessToken`, `refreshToken`), el `familyId` del usuario y su rol en la familia.
-*   `POST /auth/refresh`: Genera un nuevo token de acceso mediante el envío de un `refreshToken` válido.
-*   `POST /auth/logout`: Invalida la sesión (el borrado físico de tokens se maneja en el cliente).
+- `POST /auth/login`: Autentica a un cuidador con su `email` y `password`. Devuelve los tokens JWT (`accessToken`, `refreshToken`), el `familyId` del usuario y su rol en la familia.
+- `POST /auth/refresh`: Genera un nuevo token de acceso mediante el envío de un `refreshToken` válido.
+- `POST /auth/logout`: Invalida la sesión (el borrado físico de tokens se maneja en el cliente).
 
 ### 2. Pacientes (`/patients`)
-*   `GET /patients`: Obtiene la lista de todos los pacientes configurados dentro del círculo familiar (`x-family-id`).
-*   `GET /patients/:id`: Obtiene la información detallada de un paciente específico por su ID.
-*   `POST /patients`: Registra un nuevo paciente en la familia. Requiere `name` y `dateOfBirth` (YYYY-MM-DD). Campos opcionales: `room`, `notes`, `primaryDiagnosis`, `allergies`, `mobility`, `emergencyContactName`, `emergencyContactPhone`, `riskLevel` y `avatarInitials`.
-*   `PUT /patients/:id`: Actualiza parcialmente la información de un paciente existente.
+- `GET /patients`: Obtiene la lista de todos los pacientes configurados dentro del círculo familiar (`x-family-id`).
+- `GET /patients/:id`: Obtiene la información detallada de un paciente específico por su ID.
+- `POST /patients`: Registra un nuevo paciente en la familia. Requiere `name` y `dateOfBirth` (YYYY-MM-DD). Campos opcionales: `room`, `notes`, `primaryDiagnosis`, `allergies`, `mobility`, `emergencyContactName`, `emergencyContactPhone`, `riskLevel` y `avatarInitials`.
+- `PUT /patients/:id`: Actualiza parcialmente la información de un paciente existente.
 
 ### 3. Medicamentos (`/medications`)
-*   `GET /medications`: Lista las prescripciones de medicamentos activos del círculo familiar.
-*   `GET /medications/doses`: Retorna las tomas de medicamentos programadas para el día de hoy, mostrando su estado (`pending`, `confirmed` o `missed`).
-*   `GET /medications/:id`: Obtiene el detalle de un medicamento específico.
-*   `POST /medications`: Registra una nueva prescripción médica. Requiere `patientId`, `name`, `dose`, `scheduledTime` (HH:MM) y `frequency`. Opcional: `notes`.
-*   `PUT /medications/:id`: Modifica los parámetros de un medicamento.
-*   `POST /medications/doses/:doseId/confirm`: Registra que una toma específica fue administrada y confirmada por el usuario autenticado.
+- `GET /medications`: Lista las prescripciones de medicamentos activos del círculo familiar.
+- `GET /medications/doses`: Retorna las tomas de medicamentos programadas para el día de hoy, mostrando su estado (`pending`, `confirmed` o `missed`).
+- `GET /medications/:id`: Obtiene el detalle de un medicamento específico.
+- `POST /medications`: Registra una nueva prescripción médica. Requiere `patientId`, `name`, `dose`, `scheduledTime` (HH:MM) y `frequency`. Opcional: `notes`.
+- `PUT /medications/:id`: Modifica los parámetros de un medicamento.
+- `POST /medications/doses/:doseId/confirm`: Registra que una toma específica fue administrada y confirmada por el usuario autenticado.
 
 ### 4. Rutinas Diarias (`/routines`)
-*   `GET /routines`: Lista las rutinas diarias de cuidado y actividades programadas para la familia.
-*   `POST /routines`: Registra una nueva rutina. Requiere `patientId`, `title`, `scheduledTime` (HH:MM), `category` (`meal`, `activity`, `hydration`, `therapy`, `sleep`, `calendar`, `other`), `recurrenceRule` (frecuencia de repetición) y `priority` (`low`, `medium`, `high`).
-*   `PUT /routines/:id`: Modifica la programación o detalles de una rutina existente.
+- `GET /routines`: Lista las rutinas diarias de cuidado y actividades programadas para la familia.
+- `POST /routines`: Registra una nueva rutina. Requiere `patientId`, `title`, `scheduledTime` (HH:MM), `category` (`meal`, `activity`, `hydration`, `therapy`, `sleep`, `calendar`, `other`), `recurrenceRule` (frecuencia de repetición) y `priority` (`low`, `medium`, `high`).
+- `PUT /routines/:id`: Modifica la programación o detalles de una rutina existente.
 
 ### 5. Dispositivos (`/devices`)
-*   `GET /devices`: Recupera el listado de dispositivos E-Ink enlazados a la familia.
-*   `POST /devices`: Vincula una nueva pantalla E-Ink a un paciente. Requiere `patientId`, `name` y `deviceKeyHash` (hash SHA-256 de autenticación del dispositivo). Opcional: `model`, `refreshMinutes` y `displayTemplate`.
-*   `PUT /devices/:id`: Actualiza los parámetros de configuración y pantalla del dispositivo IoT.
+- `GET /devices`: Recupera el listado de dispositivos E-Ink enlazados a la familia.
+- `POST /devices`: Vincula una nueva pantalla E-Ink a un paciente. Requiere `patientId`, `name` y `deviceKeyHash` (hash SHA-256 de autenticación del dispositivo). Opcional: `model`, `refreshMinutes` y `displayTemplate`.
+- `PUT /devices/:id`: Actualiza los parámetros de configuración y pantalla del dispositivo IoT.
 
 ### 6. Notificaciones (`/notifications`)
-*   `GET /notifications`: Lista las alertas clínicas y de sistema dirigidas a la familia.
-*   `PUT /notifications/:id/read`: Marca una notificación como leída.
+- `GET /notifications`: Lista las alertas clínicas y de sistema dirigidas a la familia.
+- `PUT /notifications/:id/read`: Marca una notificación como leída.
+
+### 7. Sincronización de Dispositivos E-Ink (`/pi`)
+Estos endpoints están diseñados para ser consumidos por el dispositivo Raspberry Pi con pantalla E-Ink. Se autentican mediante el header `x-device-key` con la clave secreta del dispositivo (en lugar de JWT).
+
+- `GET /pi/sync/:deviceId`: Obtiene la carga completa de visualización para el dispositivo. Incluye configuración del dispositivo, datos del paciente, siguiente medicamento pendiente, dosis omitida, próxima rutina y mensaje familiar (según configuración).
+  - Header requerido: `x-device-key: <raw_secret>`
+- `PATCH /pi/sync/:deviceId/heartbeat`: Reporta el estado de salud del dispositivo a la nube. Envía telemetría como dirección IP, versión de firmware, nivel de batería (0-100) y fuente de alimentación (`ac`/`battery`).
+  - Header requerido: `x-device-key: <raw_secret>`
+  - Cuerpo (todos los campos opcionales): `{ "ipAddress": "...", "firmwareVersion": "...", "batteryPercentage": 85, "powerSource": "ac" }`
 
 ---
 
@@ -210,15 +219,20 @@ A continuación se detallan los endpoints disponibles divididos por módulos ló
 ### Paso 1: Configurar la Base de Datos Local
 
 1. Levanta el contenedor de PostgreSQL (mapeado al puerto `5433` de forma segura):
+
    ```bash
    docker compose up -d
    ```
+
 2. Dirígete a la carpeta del backend y ejecuta las migraciones de Drizzle para crear el esquema en la base de datos:
+
    ```bash
    cd backend
    npm run db:migrate
    ```
+
 3. Llena la base de datos con los datos iniciales de prueba (paciente Eleanor Hayes, cuidadores Maria y David, recordatorios y alertas):
+
    ```bash
    npm run db:seed
    ```
@@ -228,20 +242,26 @@ A continuación se detallan los endpoints disponibles divididos por módulos ló
 ### Paso 2: Inicializar el Backend
 
 1. Estando en la carpeta `backend`, instala las dependencias:
+
    ```bash
    npm install
    ```
+
 2. Configura las variables de entorno. Puedes usar el archivo `.env` ya creado por defecto con los siguientes valores para desarrollo local:
+
    ```env
    PORT=3001
    DATABASE_URL=postgres://postgres:postgres@localhost:5433/carecircle
    JWT_SECRET=supersecretkeychangeinproduction
    JWT_REFRESH_SECRET=supersecretrefreshkeychangeinproduction
    ```
+
 3. Ejecuta el servidor en modo desarrollo:
+
    ```bash
    npm run dev
    ```
+
    El backend se ejecutará en `http://localhost:3001`. Puedes verificar el estado en `http://localhost:3001/health`.
 
 ---
@@ -249,11 +269,15 @@ A continuación se detallan los endpoints disponibles divididos por módulos ló
 ### Paso 3: Inicializar el Frontend
 
 1. Vuelve a la raíz del monorepo e instala las dependencias del frontend:
+
    ```bash
    npm install
    ```
+
 2. Inicia el servidor de desarrollo de Vite (con soporte TanStack Start SSR):
+
    ```bash
    npm run dev
    ```
+
 3. Abre el navegador en la URL provista por Vite (usualmente `http://localhost:3000` o `http://localhost:5173`) para acceder a la consola.
