@@ -12,7 +12,8 @@ CareCircle AI es una plataforma moderna diseñada para conectar a círculos de c
 4. [Modelo de Datos (Esquema de Base de Datos)](#-modelo-de-datos-esquema-de-base-de-datos)
 5. [Estructura del Proyecto (Monorepo)](#-estructura-del-proyecto-monorepo)
 6. [Flujo de Autenticación y Multi-inquilino](#-flujo-de-autenticación-y-multi-inquilino)
-7. [Configuración e Instalación Local](#-configuración-e-instalación-local)
+7. [Endpoints de la API (REST API)](#-endpoints-de-la-api-rest-api)
+8. [Configuración e Instalación Local](#-configuración-e-instalación-local)
 
 ---
 
@@ -151,6 +152,49 @@ CareCircle/
 2. **Encabezado `x-family-id`**: Cada solicitud HTTP realizada por el frontend a rutas restringidas de pacientes, medicamentos o dispositivos debe incluir el header `x-family-id` especificando qué círculo familiar se está visualizando.
 3. **Guardia de Pertenencia (`requireMembership`)**:
    El middleware de Fastify (`requireMembershipHelper`) intercepta la solicitud y valida que el `userId` autenticado pertenezca a esa familia con el rol requerido (`admin`, `editor`, `viewer`) para completar la operación.
+
+---
+
+## 📡 Endpoints de la API (REST API)
+
+Todas las peticiones a la API (a excepción del módulo de autenticación) deben incluir los siguientes encabezados:
+*   `Authorization: Bearer <JWT_ACCESS_TOKEN>`: Token de acceso obtenido al iniciar sesión.
+*   `x-family-id: <FAMILY_UUID>`: Identificador del círculo familiar sobre el cual se operará.
+
+A continuación se detallan los endpoints disponibles divididos por módulos lógicos:
+
+### 1. Autenticación (`/auth`)
+*   `POST /auth/login`: Autentica a un cuidador con su `email` y `password`. Devuelve los tokens JWT (`accessToken`, `refreshToken`), el `familyId` del usuario y su rol en la familia.
+*   `POST /auth/refresh`: Genera un nuevo token de acceso mediante el envío de un `refreshToken` válido.
+*   `POST /auth/logout`: Invalida la sesión (el borrado físico de tokens se maneja en el cliente).
+
+### 2. Pacientes (`/patients`)
+*   `GET /patients`: Obtiene la lista de todos los pacientes configurados dentro del círculo familiar (`x-family-id`).
+*   `GET /patients/:id`: Obtiene la información detallada de un paciente específico por su ID.
+*   `POST /patients`: Registra un nuevo paciente en la familia. Requiere `name` y `dateOfBirth` (YYYY-MM-DD). Campos opcionales: `room`, `notes`, `primaryDiagnosis`, `allergies`, `mobility`, `emergencyContactName`, `emergencyContactPhone`, `riskLevel` y `avatarInitials`.
+*   `PUT /patients/:id`: Actualiza parcialmente la información de un paciente existente.
+
+### 3. Medicamentos (`/medications`)
+*   `GET /medications`: Lista las prescripciones de medicamentos activos del círculo familiar.
+*   `GET /medications/doses`: Retorna las tomas de medicamentos programadas para el día de hoy, mostrando su estado (`pending`, `confirmed` o `missed`).
+*   `GET /medications/:id`: Obtiene el detalle de un medicamento específico.
+*   `POST /medications`: Registra una nueva prescripción médica. Requiere `patientId`, `name`, `dose`, `scheduledTime` (HH:MM) y `frequency`. Opcional: `notes`.
+*   `PUT /medications/:id`: Modifica los parámetros de un medicamento.
+*   `POST /medications/doses/:doseId/confirm`: Registra que una toma específica fue administrada y confirmada por el usuario autenticado.
+
+### 4. Rutinas Diarias (`/routines`)
+*   `GET /routines`: Lista las rutinas diarias de cuidado y actividades programadas para la familia.
+*   `POST /routines`: Registra una nueva rutina. Requiere `patientId`, `title`, `scheduledTime` (HH:MM), `category` (`meal`, `activity`, `hydration`, `therapy`, `sleep`, `calendar`, `other`), `recurrenceRule` (frecuencia de repetición) y `priority` (`low`, `medium`, `high`).
+*   `PUT /routines/:id`: Modifica la programación o detalles de una rutina existente.
+
+### 5. Dispositivos (`/devices`)
+*   `GET /devices`: Recupera el listado de dispositivos E-Ink enlazados a la familia.
+*   `POST /devices`: Vincula una nueva pantalla E-Ink a un paciente. Requiere `patientId`, `name` y `deviceKeyHash` (hash SHA-256 de autenticación del dispositivo). Opcional: `model`, `refreshMinutes` y `displayTemplate`.
+*   `PUT /devices/:id`: Actualiza los parámetros de configuración y pantalla del dispositivo IoT.
+
+### 6. Notificaciones (`/notifications`)
+*   `GET /notifications`: Lista las alertas clínicas y de sistema dirigidas a la familia.
+*   `PUT /notifications/:id/read`: Marca una notificación como leída.
 
 ---
 
