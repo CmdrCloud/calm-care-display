@@ -14,12 +14,239 @@ import {
 } from "@/shared/components/ui/select";
 import { Slider } from "@/shared/components/ui/slider";
 import { Switch } from "@/shared/components/ui/switch";
-import { Wifi, WifiOff, Plus, BatteryMedium, Plug, Eye } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/shared/components/ui/dialog";
+import { Wifi, WifiOff, Plus, BatteryMedium, Plug, Eye, Copy, Check, KeyRound } from "lucide-react";
 import { EInkPreview } from "@/features/eink/components/eink-preview";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/shared/api/client";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+
+async function sha256Hex(input: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(input);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function generateDeviceKey(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let key = "";
+  for (let i = 0; i < 32; i++) {
+    key += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return key;
+}
+
+function RegisterDeviceDialog({
+  open,
+  onOpenChange,
+  onSuccess,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const setOpen = onOpenChange;
+
+  const [patientId, setPatientId] = useState("");
+  const [name, setName] = useState("");
+  const [deviceKey, setDeviceKey] = useState("");
+  const [deviceKeyHash, setDeviceKeyHash] = useState("");
+  const [model, setModel] = useState("");
+  const [refreshMinutes, setRefreshMinutes] = useState(15);
+  const [displayTemplate, setDisplayTemplate] = useState("daily_summary");
+  const [copied, setCopied] = useState(false);
+
+  const { data: patientsList = [] } = useQuery({
+    queryKey: ["patients"],
+    queryFn: () => api.get<any[]>("/patients"),
+    enabled: open,
+  });
+
+  const createDeviceMutation = useMutation({
+    mutationFn: (data: any) => api.post("/devices", data),
+    onSuccess: () => {
+      onSuccess();
+      queryClient.invalidateQueries({ queryKey: ["devices"] });
+      toast.success("Device registered successfully! Copy the device key — you'll need it for the Pi.");
+      setCopied(false);
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to register device.");
+    },
+  });
+
+  const handleGenerateKey = async () => {
+    const key = generateDeviceKey();
+    setDeviceKey(key);
+    const hash = await sha256Hex(key);
+    setDeviceKeyHash(hash);
+  };
+
+  const handleCopyKey = async () => {
+    await navigator.clipboard.writeText(deviceKey);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const resetForm = () => {
+    setPatientId("");
+    setName("");
+    setDeviceKey("");
+    setDeviceKeyHash("");
+    setModel("");
+    setRefreshMinutes(15);
+    setDisplayTemplate("daily_summary");
+    setCopied(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!patientId || !name || !deviceKeyHash) {
+      toast.error("Please fill in required fields and generate a device key.");
+      return;
+    }
+    const payload: any = {
+      patientId,
+      name,
+      deviceKeyHash,
+    };
+    if (model) payload.model = model;
+    if (refreshMinutes !== 15) payload.refreshMinutes = refreshMinutes;
+    if (displayTemplate !== "daily_summary") payload.displayTemplate = displayTemplate;
+    createDeviceMutation.mutate(payload);
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        setOpen(isOpen);
+        if (!isOpen) resetForm();
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button className="rounded-full">
+          <Plus className="mr-2 h-4 w-4" /> Register device
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="rounded-2xl sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Register a new device</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4 py-2">
+            <div className="grid gap-2">
+              <Label htmlFor="patient">Patient</Label>
+              <Select value={patientId} onValueChange={setPatientId}>
+                <SelectTrigger id="patient">
+                  <SelectValue placeholder="Select a patient" />
+                </SelectTrigger>
+                <SelectContent>
+                  {patientsList.map((p: any) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="dev-name">Device name</Label>
+              <Input
+                id="dev-name"
+                placeholder="e.g. Eleanor's room display"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Device key</Label>
+              {deviceKey ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 font-mono text-xs">
+                    <span className="flex-1 break-all">{deviceKey}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0"
+                      onClick={handleCopyKey}
+                    >
+                      {copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Copy this key — you'll need it to configure the Raspberry Pi. It won't be shown again.
+                  </p>
+                </div>
+              ) : (
+                <Button type="button" variant="outline" className="w-full" onClick={handleGenerateKey}>
+                  <KeyRound className="mr-2 h-4 w-4" /> Generate device key
+                </Button>
+              )}
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="dev-model">Model</Label>
+              <Input
+                id="dev-model"
+                placeholder="Raspberry Pi 3"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-2">
+                <Label htmlFor="dev-refresh">Refresh (min)</Label>
+                <Input
+                  id="dev-refresh"
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={refreshMinutes}
+                  onChange={(e) => setRefreshMinutes(Number(e.target.value))}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="dev-template">Template</Label>
+                <Select value={displayTemplate} onValueChange={setDisplayTemplate}>
+                  <SelectTrigger id="dev-template">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily_summary">Daily Summary</SelectItem>
+                    <SelectItem value="next_reminder">Next Reminder</SelectItem>
+                    <SelectItem value="full_schedule">Full Schedule</SelectItem>
+                    <SelectItem value="message_card">Message Card</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={createDeviceMutation.isPending || !deviceKeyHash}>
+              Register device
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function Info({
   label,
@@ -43,6 +270,7 @@ function Info({
 export function DevicesPage() {
   const queryClient = useQueryClient();
   const [selectedDeviceIndex, setSelectedDeviceIndex] = useState(0);
+  const [registerDialogOpen, setRegisterDialogOpen] = useState(false);
 
   // Form states for config
   const [deviceName, setDeviceName] = useState("");
@@ -149,9 +377,11 @@ export function DevicesPage() {
                 <Eye className="mr-2 h-4 w-4" /> Full preview
               </Link>
             </Button>
-            <Button className="rounded-full">
-              <Plus className="mr-2 h-4 w-4" /> Register device
-            </Button>
+            <RegisterDeviceDialog
+              open={registerDialogOpen}
+              onOpenChange={setRegisterDialogOpen}
+              onSuccess={() => queryClient.invalidateQueries({ queryKey: ["devices"] })}
+            />
           </div>
         </div>
 
@@ -327,7 +557,7 @@ export function DevicesPage() {
                   Flash the CareCircle image, enter the 6-digit pairing code, and choose a template.
                 </p>
               </div>
-              <Button variant="outline" className="rounded-full">
+              <Button variant="outline" className="rounded-full" onClick={() => setRegisterDialogOpen(true)}>
                 Start setup
               </Button>
             </CardContent>
