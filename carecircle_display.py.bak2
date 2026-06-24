@@ -13,19 +13,12 @@ import logging
 import socket
 from datetime import datetime
 
-<<<<<<< HEAD
-import typing
-=======
 import types, typing, importlib.util
->>>>>>> f413636 (Gestion de pichi)
 if not hasattr(typing, 'Literal'):
     class _Literal(object):
         def __class_getitem__(cls, item):
             return cls
     typing.Literal = _Literal
-<<<<<<< HEAD
-
-=======
 def _stub(name):
     m = types.ModuleType(name)
     sys.modules[name] = m
@@ -35,6 +28,8 @@ _ink_d   = _stub('inkycal.display')
 _ink_drv = _stub('inkycal.display.drivers')
 _ink.display   = _ink_d
 _ink_d.drivers = _ink_drv
+# Lazy-load epdconfig only when push_to_display actually needs it,
+# not at startup (GPIO init at startup causes a 99% CPU spin).
 _DRIVERS = '/home/pi/Inkycal/inkycal/display/drivers'
 def _ink_drv_getattr(name):
     if name == 'epdconfig':
@@ -46,7 +41,6 @@ def _ink_drv_getattr(name):
         return _ec
     raise AttributeError(name)
 _ink_drv.__getattr__ = _ink_drv_getattr
->>>>>>> f413636 (Gestion de pichi)
 sys.path.insert(0, '/home/pi/Inkycal/inkycal/display/drivers')
 sys.path.insert(0, '/home/pi/Projects/calm-care-display')
 
@@ -79,9 +73,6 @@ FONT_DIR = '/home/pi/Inkycal/fonts/NotoSans'
 FONT_REGULAR = os.path.join(FONT_DIR, 'NotoSans-SemiCondensed.ttf')
 FONT_MEDIUM = os.path.join(FONT_DIR, 'NotoSans-SemiCondensedMedium.ttf')
 FONT_BOLD = os.path.join(FONT_DIR, 'NotoSans-SemiCondensedSemiBold.ttf')
-
-# Cached EPD instance — created once per process to avoid GPIO conflicts
-_epd = None
 
 
 # --- Config & API ---
@@ -219,12 +210,14 @@ def _render_header(draw, fonts, today_date, patient_name):
     label_h = _measure_text(draw, "TODAY", fonts['label'])[1]
     name_h = _measure_text(draw, today_date, fonts['header_name'])[1]
 
+    # Left: "TODAY" label + date
     draw.text((left_x, PADDING), "TODAY", fill=0, font=fonts['label'], anchor="lt")
     draw.text(
         (left_x, PADDING + label_h + 4),
         today_date, fill=0, font=fonts['header_name'], anchor="lt"
     )
 
+    # Right: "PATIENT" label + name
     pat_label_w = _measure_text(draw, "PATIENT", fonts['label'])[0]
     draw.text(
         (right_x - pat_label_w, PADDING),
@@ -236,6 +229,7 @@ def _render_header(draw, fonts, today_date, patient_name):
         patient_name, fill=0, font=fonts['header_name'], anchor="lt"
     )
 
+    # Horizontal divider
     line_y = PADDING + label_h + 4 + name_h + 8
     draw.line([(left_x, line_y), (right_x, line_y)], fill=0, width=BORDER_WIDTH)
     return line_y
@@ -248,9 +242,10 @@ def _render_daily_summary(draw, fonts, data, left_x, right_x, content_y, content
     col_w = int((right_x - left_x - COLUMN_GAP) / 2)
     col_h = content_height
 
-    # Left column: Medication
+    # --- Left column: Medication ---
     med_x = left_x
-    draw.rectangle((med_x, content_y, med_x + col_w, content_y + col_h), outline=0, width=BORDER_WIDTH)
+    med_rect = (med_x, content_y, med_x + col_w, content_y + col_h)
+    draw.rectangle(med_rect, outline=0, width=BORDER_WIDTH)
 
     inner_x = med_x + 12
     inner_y = content_y + 12
@@ -263,10 +258,12 @@ def _render_daily_summary(draw, fonts, data, left_x, right_x, content_y, content
         if med_time:
             draw.text((inner_x, inner_y), med_time, fill=0, font=fonts['time'], anchor="lt")
             inner_y += _measure_text(draw, med_time, fonts['time'])[1] + 6
+
         med_name = next_med.get('name', '')
         if med_name:
             draw.text((inner_x, inner_y), med_name, fill=0, font=fonts['title'], anchor="lt")
             inner_y += _measure_text(draw, med_name, fonts['title'])[1] + 4
+
         dose = next_med.get('dose', '')
         if dose:
             draw.text((inner_x, inner_y), dose, fill=0, font=fonts['body'], anchor="lt")
@@ -278,9 +275,10 @@ def _render_daily_summary(draw, fonts, data, left_x, right_x, content_y, content
             muted, fill=0, font=fonts['body'], anchor="lt"
         )
 
-    # Right column: Routine
+    # --- Right column: Routine ---
     routine_x = med_x + col_w + COLUMN_GAP
-    draw.rectangle((routine_x, content_y, routine_x + col_w, content_y + col_h), outline=0, width=BORDER_WIDTH)
+    routine_rect = (routine_x, content_y, routine_x + col_w, content_y + col_h)
+    draw.rectangle(routine_rect, outline=0, width=BORDER_WIDTH)
 
     inner_x2 = routine_x + 12
     inner_y2 = content_y + 12
@@ -295,10 +293,12 @@ def _render_daily_summary(draw, fonts, data, left_x, right_x, content_y, content
             formatted_time = "%s:%s" % (parts[0], parts[1]) if len(parts) >= 2 else rtime
             draw.text((inner_x2, inner_y2), formatted_time, fill=0, font=fonts['time'], anchor="lt")
             inner_y2 += _measure_text(draw, formatted_time, fonts['time'])[1] + 6
+
         r_title = next_routine.get('title', '')
         if r_title:
             draw.text((inner_x2, inner_y2), r_title, fill=0, font=fonts['title'], anchor="lt")
             inner_y2 += _measure_text(draw, r_title, fonts['title'])[1] + 4
+
         category = next_routine.get('category', '')
         if category:
             draw.text((inner_x2, inner_y2), category.capitalize(), fill=0, font=fonts['body'], anchor="lt")
@@ -323,27 +323,35 @@ def _render_next_reminder(draw, fonts, data, left_x, right_x, content_y, content
     if show_med and next_med:
         label_text = "NEXT MEDICATION REMINDER"
         label_h = _measure_text(draw, label_text, fonts['label'])[1]
+
         med_time = _format_med_time(next_med.get('scheduledFor'))
         time_h = _measure_text(draw, med_time, fonts['time'])[1] if med_time else 0
+
         name = next_med.get('name', '')
         name_h = _measure_text(draw, name, fonts['title'])[1] if name else 0
+
         dose = next_med.get('dose', '')
         dose_h = _measure_text(draw, dose, fonts['body'])[1] if dose else 0
+
         total_h = pad * 2 + label_h + 8 + time_h + (8 if med_time else 0) + name_h + (4 if name else 0) + dose_h
         box_y = content_y + max(10, (content_height - total_h) / 2)
         draw.rectangle([left_x, box_y, right_x, box_y + total_h], outline=0, width=BORDER_WIDTH)
+
         cy = box_y + pad
         lw = _measure_text(draw, label_text, fonts['label'])[0]
         draw.text((cx - lw / 2, cy), label_text, fill=0, font=fonts['label'], anchor="lt")
         cy += label_h + 8
+
         if med_time:
             tw = _measure_text(draw, med_time, fonts['time'])[0]
             draw.text((cx - tw / 2, cy), med_time, fill=0, font=fonts['time'], anchor="lt")
             cy += time_h + 8
+
         if name:
             nw = _measure_text(draw, name, fonts['title'])[0]
             draw.text((cx - nw / 2, cy), name, fill=0, font=fonts['title'], anchor="lt")
             cy += name_h + 4
+
         if dose:
             dw = _measure_text(draw, dose, fonts['body'])[0]
             draw.text((cx - dw / 2, cy), dose, fill=0, font=fonts['body'], anchor="lt")
@@ -351,28 +359,38 @@ def _render_next_reminder(draw, fonts, data, left_x, right_x, content_y, content
     elif show_routine and next_routine:
         label_text = "NEXT ROUTINE ACTIVITY"
         label_h = _measure_text(draw, label_text, fonts['label'])[1]
+
         rtime = next_routine.get('scheduledTime', '')
         parts = rtime.split(':')
         formatted_time = "%s:%s" % (parts[0], parts[1]) if len(parts) >= 2 else rtime
         time_h = _measure_text(draw, formatted_time, fonts['time'])[1]
+
         r_title = next_routine.get('title', '')
         title_h = _measure_text(draw, r_title, fonts['title'])[1] if r_title else 0
-        cat = next_routine.get('category', '').capitalize()
+
+        cat = next_routine.get('category', '')
+        if cat:
+            cat = cat.capitalize()
         cat_h = _measure_text(draw, cat, fonts['body'])[1] if cat else 0
+
         total_h = pad * 2 + label_h + 8 + time_h + 8 + title_h + (4 if r_title else 0) + cat_h
         box_y = content_y + max(10, (content_height - total_h) / 2)
         draw.rectangle([left_x, box_y, right_x, box_y + total_h], outline=0, width=BORDER_WIDTH)
+
         cy = box_y + pad
         lw = _measure_text(draw, label_text, fonts['label'])[0]
         draw.text((cx - lw / 2, cy), label_text, fill=0, font=fonts['label'], anchor="lt")
         cy += label_h + 8
+
         tw = _measure_text(draw, formatted_time, fonts['time'])[0]
         draw.text((cx - tw / 2, cy), formatted_time, fill=0, font=fonts['time'], anchor="lt")
         cy += time_h + 8
+
         if r_title:
             nw = _measure_text(draw, r_title, fonts['title'])[0]
             draw.text((cx - nw / 2, cy), r_title, fill=0, font=fonts['title'], anchor="lt")
             cy += title_h + 4
+
         if cat:
             cw = _measure_text(draw, cat, fonts['body'])[0]
             draw.text((cx - cw / 2, cy), cat, fill=0, font=fonts['body'], anchor="lt")
@@ -402,26 +420,35 @@ def _render_footer(draw, fonts, data):
     missed_font = fonts['missed']
     footer_h = _measure_text(draw, "Ag", footer_font)[1]
 
-    has_missed_banner = bool(device.get('showMissedDoseAlerts', True) and missed_dose is not None)
+    has_missed_banner = bool(
+        device.get('showMissedDoseAlerts', True) and
+        missed_dose is not None
+    )
     banner_h = 44 if has_missed_banner else 0
 
+    # Compute positions from bottom up
     footer_line_y = HEIGHT - PADDING - banner_h - (footer_h + 10)
     status_y = footer_line_y + 2 + 6
     banner_y = status_y + footer_h + 6
 
+    # Horizontal line
     draw.line([(left_x, footer_line_y), (right_x, footer_line_y)], fill=0, width=BORDER_WIDTH)
 
+    # Status text (left)
     status = "Awaiting schedule"
     if next_med is not None:
         status = "Awaiting confirmation"
     elif missed_dose is not None:
         status = "Missed dose !"
-    draw.text((left_x, status_y), "Status: %s" % status, fill=0, font=footer_font, anchor="lt")
+    status_text = "Status: %s" % status
+    draw.text((left_x, status_y), status_text, fill=0, font=footer_font, anchor="lt")
 
+    # Sync text (right)
     sync_text = "Synced just now"
     sync_w = _measure_text(draw, sync_text, footer_font)[0]
     draw.text((right_x - sync_w, status_y), sync_text, fill=0, font=footer_font, anchor="lt")
 
+    # Missed dose alert banner
     if has_missed_banner:
         missed_name = missed_dose.get('name', 'medication')
         missed_dose_str = missed_dose.get('dose', '')
@@ -429,6 +456,7 @@ def _render_footer(draw, fonts, data):
             banner_text = "! Please take %s %s as soon as possible" % (missed_name, missed_dose_str)
         else:
             banner_text = "! Please take %s as soon as possible" % missed_name
+
         banner_text_h = _measure_text(draw, banner_text, missed_font)[1]
         actual_banner_h = banner_text_h + 16
         draw.rectangle([left_x, banner_y, right_x, banner_y + actual_banner_h], fill=0)
@@ -444,40 +472,52 @@ def render_image(data):
     draw = ImageDraw.Draw(image)
 
     fonts = {
-        'label':       _load_font(14),
-        'body':        _load_font(22),
-        'title':       _load_font(30, 'bold'),
-        'time':        _load_font(56, 'bold'),
+        'label': _load_font(14),
+        'body': _load_font(22),
+        'title': _load_font(30, 'bold'),
+        'time': _load_font(56, 'bold'),
         'header_name': _load_font(26, 'bold'),
-        'missed':      _load_font(20, 'medium'),
-        'footer':      _load_font(18),
+        'missed': _load_font(20, 'medium'),
+        'footer': _load_font(18),
     }
 
     device = data.get('device', {})
     patient = data.get('patient', {})
+    next_med = data.get('nextMedication')
     missed_dose = data.get('missedDose')
 
-    patient_name = patient.get('name', '---') if patient else '---'
+    patient_name = patient.get('name', '---')
     today_date = _format_today()
     template = device.get('displayTemplate', 'daily_summary')
 
     left_x = PADDING
     right_x = WIDTH - PADDING
 
+    # --- Header ---
     header_line_y = _render_header(draw, fonts, today_date, patient_name)
     content_y = header_line_y + BORDER_WIDTH + 14
 
+    # --- Footer (compute positions first) ---
     footer_font_h = _measure_text(draw, "Ag", fonts['footer'])[1]
-    has_missed_banner = bool(device.get('showMissedDoseAlerts', True) and missed_dose is not None)
+    has_missed_banner = bool(
+        device.get('showMissedDoseAlerts', True) and
+        missed_dose is not None
+    )
     banner_h = 44 if has_missed_banner else 0
     footer_line_y = HEIGHT - PADDING - banner_h - (footer_font_h + 10)
-    content_height = max(100, footer_line_y - 12 - content_y)
+    content_end_y = footer_line_y - 12
+    content_height = content_end_y - content_y
 
+    if content_height < 100:
+        content_height = 100
+
+    # --- Content ---
     if template == 'next_reminder':
         _render_next_reminder(draw, fonts, data, left_x, right_x, content_y, content_height)
     else:
         _render_daily_summary(draw, fonts, data, left_x, right_x, content_y, content_height)
 
+    # --- Footer ---
     _render_footer(draw, fonts, data)
 
     return image
@@ -485,105 +525,24 @@ def render_image(data):
 
 # --- Display ---
 
-_epd = None
-
-
-def get_epd():
-    global _epd
-
-    if _epd is None:
-        logger.info("Loading EPD driver")
-
-        # Release any GPIO pins held by a previous crash
-        try:
-            import RPi.GPIO as GPIO
-            GPIO.setwarnings(False)
-            GPIO.cleanup()
-        except Exception:
-            pass
-
-        logger.info("Loading epdconfig")
-
-        _spec = importlib.util.spec_from_file_location(
-            "epdconfig",
-            _DRIVERS + "/epdconfig.py"
-        )
-        _mod = importlib.util.module_from_spec(_spec)
-        sys.modules['epdconfig'] = _mod
-        _spec.loader.exec_module(_mod)
-
-        logger.info("Loading epd_7_in_5_v2")
-
-        _spec2 = importlib.util.spec_from_file_location(
-            "epd_7_in_5_v2",
-            _DRIVERS + "/epd_7_in_5_v2.py"
-        )
-        _mod2 = importlib.util.module_from_spec(_spec2)
-        sys.modules['epd_7_in_5_v2'] = _mod2
-        _spec2.loader.exec_module(_mod2)
-
-        logger.info("Creating EPD instance")
-
-        _epd = _mod2.EPD()
-
-        # Patch ReadBusy with a safe timeout to prevent infinite loops if hardware fails
-        def _read_busy_with_timeout(self_epd):
-            import RPi.GPIO as GPIO
-            import time
-            start = time.time()
-            while GPIO.input(self_epd.busy_pin) == 1:
-                if time.time() - start > 10.0:
-                    raise TimeoutError("e-Paper Busy Timeout (10s exceeded)")
-                time.sleep(0.1)
-
-        _mod2.EPD.ReadBusy = _read_busy_with_timeout
-
-        logger.info("About to call EPD.init()")
-
-        _epd.init()
-
-        logger.info("EPD.init() finished")
-        logger.info("EPD driver initialised")
-
-    return _epd
-
-
 def push_to_display(image):
-    global _epd
-
     try:
-        epd = get_epd()
-
-        logger.info("About to call getbuffer()")
-
-        buffer = epd.getbuffer(image)
-
-        logger.info("getbuffer() finished")
-
-        logger.info("About to call display()")
-
-        epd.display(buffer)
-
-        logger.info("display() finished")
-
-        logger.info("About to call sleep()")
-
+        import importlib.util
+        epdconfig_spec = importlib.util.spec_from_file_location("epdconfig", "/home/pi/Inkycal/inkycal/display/drivers/epdconfig.py")
+        epdconfig_mod = importlib.util.module_from_spec(epdconfig_spec)
+        sys.modules['epdconfig'] = epdconfig_mod
+        epdconfig_spec.loader.exec_module(epdconfig_mod)
+        epd_spec = importlib.util.spec_from_file_location("epd_7_in_5_v2", "/home/pi/Inkycal/inkycal/display/drivers/epd_7_in_5_v2.py")
+        epd_mod = importlib.util.module_from_spec(epd_spec)
+        epd_spec.loader.exec_module(epd_mod)
+        epd = epd_mod.EPD()
+        epd.init()
+        epd.display(epd.getbuffer(image))
         epd.sleep()
-
-        logger.info("sleep() finished")
-
         logger.info("Display updated successfully")
-
     except Exception as e:
-        logger.exception("Display update failed")
+        logger.error("Display update failed: %s", str(e))
 
-        try:
-            if _epd is not None:
-                _epd.sleep()
-        except Exception:
-            pass
-
-        _epd = None
 
 # --- Main loop ---
 
@@ -594,14 +553,14 @@ def main():
     while True:
         try:
             data = fetch_sync_data(config)
-            refresh_minutes = 1  # Forced to 1 minute as requested by user (original: data.get('device', {}).get('refreshMinutes', 15))
+            refresh_minutes = data.get('device', {}).get('refreshMinutes', 15)
             image = render_image(data)
             push_to_display(image)
             send_heartbeat(config)
-            logger.info("Cycle complete. Sleeping %d minute(s).", refresh_minutes)
+            logger.info("Cycle complete. Sleeping %d minutes.", refresh_minutes)
         except Exception as e:
             logger.error("Cycle failed: %s", str(e))
-            refresh_minutes = 1
+            refresh_minutes = 15
 
         time.sleep(refresh_minutes * 60)
 
