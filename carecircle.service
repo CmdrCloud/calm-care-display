@@ -1,0 +1,27 @@
+# To install and enable this service, run on the Pi:
+#   sudo cp carecircle.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable carecircle
+#   sudo systemctl start carecircle
+#   sudo systemctl status carecircle
+#
+# To view live logs:
+#   journalctl -u carecircle -f
+
+[Unit]
+Description=CareCircle E-Ink Display Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/Projects/calm-care-display
+ExecStart=/usr/bin/python3 /home/pi/Projects/calm-care-display/carecircle_display.py
+Restart=always
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
