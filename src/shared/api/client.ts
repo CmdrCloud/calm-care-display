@@ -45,7 +45,9 @@ class ApiClient {
     const { accessToken, familyId } = this.getTokens();
 
     const headers = new Headers(options.headers || {});
-    headers.set("Content-Type", "application/json");
+    if (options.method !== "GET" && options.method !== "DELETE" && options.body !== undefined && options.body !== null) {
+      headers.set("Content-Type", "application/json");
+    }
     headers.set("x-family-id", familyId);
 
     if (accessToken) {
