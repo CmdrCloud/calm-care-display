@@ -14,6 +14,7 @@ import socket
 from datetime import datetime
 
 sys.path.insert(0, '/home/pi/Inkycal/inkycal/display/drivers')
+sys.path.insert(0, '/home/pi/Inkycal/venv/lib/python3.7/site-packages')
 
 logging.basicConfig(
     level=logging.INFO,
