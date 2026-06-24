@@ -13,19 +13,12 @@ import logging
 import socket
 from datetime import datetime
 
-<<<<<<< HEAD
-import typing
-=======
 import types, typing, importlib.util
->>>>>>> f413636 (Gestion de pichi)
 if not hasattr(typing, 'Literal'):
     class _Literal(object):
         def __class_getitem__(cls, item):
             return cls
     typing.Literal = _Literal
-<<<<<<< HEAD
-
-=======
 def _stub(name):
     m = types.ModuleType(name)
     sys.modules[name] = m
@@ -46,7 +39,6 @@ def _ink_drv_getattr(name):
         return _ec
     raise AttributeError(name)
 _ink_drv.__getattr__ = _ink_drv_getattr
->>>>>>> f413636 (Gestion de pichi)
 sys.path.insert(0, '/home/pi/Inkycal/inkycal/display/drivers')
 sys.path.insert(0, '/home/pi/Projects/calm-care-display')
 
