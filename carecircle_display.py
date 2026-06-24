@@ -13,6 +13,13 @@ import logging
 import socket
 from datetime import datetime
 
+import typing
+if not hasattr(typing, 'Literal'):
+    class _Literal(object):
+        def __class_getitem__(cls, item):
+            return cls
+    typing.Literal = _Literal
+
 sys.path.insert(0, '/home/pi/Inkycal/inkycal/display/drivers')
 sys.path.insert(0, '/home/pi/Projects/calm-care-display')
 
