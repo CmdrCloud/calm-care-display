@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, asc, gte, lte } from "drizzle-orm";
 import { db } from "../../shared/database/db";
 import { medications, medicationDoses, patients } from "../../shared/database/schema";
 import { HttpError } from "../../shared/middleware/error.middleware";
@@ -134,9 +134,11 @@ export class MedicationsService {
       .where(
         and(
           eq(patients.familyId, familyId),
-          // We can widen/relax query in local dev to show all seeded doses
+          gte(medicationDoses.scheduledFor, todayStart),
+          lte(medicationDoses.scheduledFor, todayEnd),
         ),
-      );
+      )
+      .orderBy(asc(medicationDoses.scheduledFor));
 
     return results;
   }

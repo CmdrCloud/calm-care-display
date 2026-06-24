@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 import { EInkPreview } from "../components/eink-preview";
 import { RefreshCw, Send, Loader2 } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/shared/api/client";
 import { toast } from "sonner";
 
@@ -51,8 +51,22 @@ export function EinkPreviewPage() {
     toast.success("E-Ink preview data refreshed!");
   };
 
+  const forceSyncMutation = useMutation({
+    mutationFn: (deviceId: string) => api.post(`/devices/${deviceId}/force-sync`),
+    onSuccess: () => {
+      toast.success("Display update triggered! The e-ink device will re-sync within seconds.");
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to trigger display update.");
+    },
+  });
+
   const handlePush = () => {
-    toast.success("Display update queued! The e-ink device will update on its next poll.");
+    if (device?.id && device.id !== "demo-device") {
+      forceSyncMutation.mutate(device.id);
+    } else {
+      toast.error("No real device connected. Push only works with a registered device.");
+    }
   };
 
   const isLoading = loadingDevices || loadingPatients || loadingRoutines || loadingDoses;

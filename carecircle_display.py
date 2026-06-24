@@ -44,9 +44,9 @@ except ImportError:
 # --- Constants ---
 WIDTH = 800
 HEIGHT = 480
-PADDING = 32
+PADDING = 20
 BORDER_WIDTH = 2
-COLUMN_GAP = 24
+COLUMN_GAP = 16
 
 FONT_DIR = '/home/pi/Inkycal/fonts/NotoSans'
 FONT_REGULAR = os.path.join(FONT_DIR, 'NotoSans-SemiCondensed.ttf')
@@ -403,10 +403,10 @@ def _render_footer(draw, fonts, data):
         device.get('showMissedDoseAlerts', True) and
         missed_dose is not None
     )
-    banner_h = 44 if has_missed_banner else 0
+    banner_h = 36 if has_missed_banner else 0
 
     # Compute positions from bottom up
-    footer_line_y = HEIGHT - PADDING - banner_h - (footer_h + 10)
+    footer_line_y = HEIGHT - PADDING - banner_h - (footer_h + 8)
     status_y = footer_line_y + 2 + 6
     banner_y = status_y + footer_h + 6
 
@@ -451,13 +451,13 @@ def render_image(data):
     draw = ImageDraw.Draw(image)
 
     fonts = {
-        'label': _load_font(14),
-        'body': _load_font(22),
-        'title': _load_font(30, 'bold'),
-        'time': _load_font(56, 'bold'),
-        'header_name': _load_font(26, 'bold'),
-        'missed': _load_font(20, 'medium'),
-        'footer': _load_font(18),
+        'label': _load_font(12),
+        'body': _load_font(17),
+        'title': _load_font(22, 'bold'),
+        'time': _load_font(40, 'bold'),
+        'header_name': _load_font(18, 'bold'),
+        'missed': _load_font(16, 'medium'),
+        'footer': _load_font(13),
     }
 
     device = data.get('device', {})
@@ -474,7 +474,7 @@ def render_image(data):
 
     # --- Header ---
     header_line_y = _render_header(draw, fonts, today_date, patient_name)
-    content_y = header_line_y + BORDER_WIDTH + 14
+    content_y = header_line_y + BORDER_WIDTH + 10
 
     # --- Footer (compute positions first) ---
     footer_font_h = _measure_text(draw, "Ag", fonts['footer'])[1]
@@ -482,9 +482,9 @@ def render_image(data):
         device.get('showMissedDoseAlerts', True) and
         missed_dose is not None
     )
-    banner_h = 44 if has_missed_banner else 0
-    footer_line_y = HEIGHT - PADDING - banner_h - (footer_font_h + 10)
-    content_end_y = footer_line_y - 12
+    banner_h = 36 if has_missed_banner else 0
+    footer_line_y = HEIGHT - PADDING - banner_h - (footer_font_h + 8)
+    content_end_y = footer_line_y - 8
     content_height = content_end_y - content_y
 
     if content_height < 100:
@@ -526,9 +526,13 @@ def main():
         try:
             data = fetch_sync_data(config)
             refresh_minutes = data.get('device', {}).get('refreshMinutes', 15)
+            force_sync = data.get('device', {}).get('forceSync', False)
             image = render_image(data)
             push_to_display(image)
             send_heartbeat(config)
+            if force_sync:
+                logger.info("Force sync triggered — re-rendering immediately.")
+                continue
             logger.info("Cycle complete. Sleeping %d minutes.", refresh_minutes)
         except Exception as e:
             logger.error("Cycle failed: %s", str(e))

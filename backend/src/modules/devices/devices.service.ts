@@ -104,6 +104,38 @@ export class DevicesService {
 
     return updatedDevice;
   }
+
+  async forceSyncDevice(familyId: string, id: string) {
+    const [existing] = await db
+      .select()
+      .from(devices)
+      .innerJoin(patients, eq(devices.patientId, patients.id))
+      .where(and(eq(patients.familyId, familyId), eq(devices.id, id)))
+      .limit(1);
+
+    if (!existing) {
+      throw new HttpError(404, "Device not found or access denied");
+    }
+
+    await db
+      .insert(deviceSyncStates)
+      .values({
+        deviceId: id,
+        forceSyncAt: new Date(),
+        status: "online",
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: deviceSyncStates.deviceId,
+        set: {
+          forceSyncAt: new Date(),
+          status: "online",
+          updatedAt: new Date(),
+        },
+      });
+
+    return { success: true };
+  }
 }
 
 export const devicesService = new DevicesService();

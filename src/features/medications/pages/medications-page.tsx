@@ -41,7 +41,6 @@ function AddMedDialog({ patientId, onSuccess }: { patientId: string; onSuccess: 
   const [time, setTime] = useState("08:00");
   const [frequency, setFrequency] = useState("daily");
   const [notes, setNotes] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const createMedMutation = useMutation({
     mutationFn: (data: any) => api.post("/medications", data),
@@ -67,7 +66,6 @@ function AddMedDialog({ patientId, onSuccess }: { patientId: string; onSuccess: 
       toast.error("Please fill in required fields.");
       return;
     }
-    setLoading(true);
     createMedMutation.mutate({
       patientId,
       name,
@@ -76,7 +74,6 @@ function AddMedDialog({ patientId, onSuccess }: { patientId: string; onSuccess: 
       frequency: frequency.charAt(0).toUpperCase() + frequency.slice(1),
       notes: notes || undefined,
     });
-    setLoading(false);
   };
 
   return (
@@ -152,7 +149,7 @@ function AddMedDialog({ patientId, onSuccess }: { patientId: string; onSuccess: 
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={createMedMutation.isPending}>
               Save medication
             </Button>
           </DialogFooter>

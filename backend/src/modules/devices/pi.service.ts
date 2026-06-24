@@ -56,17 +56,52 @@ export class PiService {
       .where(eq(patients.id, device.patientId))
       .limit(1);
 
+    // Use local server timezone for date boundaries (matching createMedication behavior)
     const now = new Date();
-    const startOfDay = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-    );
-    const endOfDay = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999),
-    );
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+    // --- Auto-create today's doses for active medications ---
+    const activeMeds = await db
+      .select({ id: medications.id, scheduledTime: medications.scheduledTime })
+      .from(medications)
+      .where(
+        and(
+          eq(medications.patientId, device.patientId),
+          eq(medications.isActive, true),
+        ),
+      );
+
+    for (const med of activeMeds) {
+      const [existing] = await db
+        .select({ id: medicationDoses.id })
+        .from(medicationDoses)
+        .where(
+          and(
+            eq(medicationDoses.medicationId, med.id),
+            gte(medicationDoses.scheduledFor, startOfDay),
+            lte(medicationDoses.scheduledFor, endOfDay),
+          ),
+        )
+        .limit(1);
+
+      if (!existing) {
+        const [hours, minutes] = med.scheduledTime.split(':').map(Number);
+        const scheduledFor = new Date(now);
+        scheduledFor.setHours(hours, minutes || 0, 0, 0);
+        await db.insert(medicationDoses).values({
+          medicationId: med.id,
+          scheduledFor,
+          status: "pending",
+        });
+      }
+    }
+    // --- End auto-create ---
 
     const todayDoses = await db
       .select({
         id: medicationDoses.id,
+        medicationId: medicationDoses.medicationId,
         status: medicationDoses.status,
         scheduledFor: medicationDoses.scheduledFor,
         medicationName: medications.name,
@@ -129,12 +164,23 @@ export class PiService {
       }
     }
 
+    // --- Check for force-sync flag ---
+    const [syncState] = await db
+      .select({ forceSyncAt: deviceSyncStates.forceSyncAt })
+      .from(deviceSyncStates)
+      .where(eq(deviceSyncStates.deviceId, device.id))
+      .limit(1);
+
+    const forceSync = !!(syncState?.forceSyncAt &&
+      (now.getTime() - new Date(syncState.forceSyncAt).getTime()) < 60000);
+
     await db
       .insert(deviceSyncStates)
       .values({
         deviceId: device.id,
         status: "online",
         lastSyncAt: new Date(),
+        forceSyncAt: null,
         updatedAt: new Date(),
       })
       .onConflictDoUpdate({
@@ -142,6 +188,7 @@ export class PiService {
         set: {
           status: "online",
           lastSyncAt: new Date(),
+          forceSyncAt: null,
           updatedAt: new Date(),
         },
       });
@@ -156,6 +203,7 @@ export class PiService {
         showNextRoutine: device.showNextRoutine,
         showMissedDoseAlerts: device.showMissedDoseAlerts,
         showFamilyMessage: device.showFamilyMessage,
+        forceSync,
       },
       patient: patient
         ? {

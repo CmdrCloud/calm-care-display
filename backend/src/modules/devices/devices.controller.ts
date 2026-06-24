@@ -51,4 +51,12 @@ export async function devicesRoutes(app: FastifyInstance) {
     const body = createDeviceSchema.partial().parse(request.body);
     return await devicesService.updateDevice(familyId, id, body);
   });
+
+  // POST /devices/:id/force-sync
+  app.post("/:id/force-sync", async (request) => {
+    const familyId = getFamilyId(request);
+    const { id } = request.params as { id: string };
+    await request.requireMembership(familyId, ["admin", "editor"]);
+    return await devicesService.forceSyncDevice(familyId, id);
+  });
 }

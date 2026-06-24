@@ -235,6 +235,7 @@ export const deviceSyncStates = pgTable(
     powerSource: devicePowerSourceEnum("power_source").notNull().default("ac"),
     ipAddress: varchar("ip_address", { length: 45 }),
     firmwareVersion: varchar("firmware_version", { length: 30 }),
+    forceSyncAt: timestamp("force_sync_at", { withTimezone: true }),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
