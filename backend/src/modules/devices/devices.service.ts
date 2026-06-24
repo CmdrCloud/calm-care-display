@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "../../shared/database/db";
-import { devices, deviceSyncStates, patients } from "../../shared/database/schema";
+import { devices, deviceSyncStates } from "../../shared/database/schema";
 import { HttpError } from "../../shared/middleware/error.middleware";
 
 export class DevicesService {
@@ -29,9 +29,8 @@ export class DevicesService {
         },
       })
       .from(devices)
-      .innerJoin(patients, eq(devices.patientId, patients.id))
       .leftJoin(deviceSyncStates, eq(devices.id, deviceSyncStates.deviceId))
-      .where(eq(patients.familyId, familyId));
+      .where(eq(devices.familyId, familyId));
 
     return results;
   }
@@ -47,20 +46,10 @@ export class DevicesService {
       displayTemplate?: "daily_summary" | "next_reminder" | "full_schedule" | "message_card";
     },
   ) {
-    // Check if patient belongs to family
-    const [patient] = await db
-      .select()
-      .from(patients)
-      .where(and(eq(patients.familyId, familyId), eq(patients.id, data.patientId)))
-      .limit(1);
-
-    if (!patient) {
-      throw new HttpError(400, "Patient not found in this family circle");
-    }
-
     const [newDevice] = await db
       .insert(devices)
       .values({
+        familyId,
         ...data,
         refreshMinutes: data.refreshMinutes || 15,
         displayTemplate: data.displayTemplate || "daily_summary",
@@ -85,8 +74,7 @@ export class DevicesService {
     const [existing] = await db
       .select()
       .from(devices)
-      .innerJoin(patients, eq(devices.patientId, patients.id))
-      .where(and(eq(patients.familyId, familyId), eq(devices.id, id)))
+      .where(and(eq(devices.familyId, familyId), eq(devices.id, id)))
       .limit(1);
 
     if (!existing) {
@@ -109,8 +97,7 @@ export class DevicesService {
     const [existing] = await db
       .select()
       .from(devices)
-      .innerJoin(patients, eq(devices.patientId, patients.id))
-      .where(and(eq(patients.familyId, familyId), eq(devices.id, id)))
+      .where(and(eq(devices.familyId, familyId), eq(devices.id, id)))
       .limit(1);
 
     if (!existing) {

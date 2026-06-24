@@ -203,6 +203,7 @@ export const devices = pgTable(
   "devices",
   {
     id: uuid("id").defaultRandom().primaryKey(),
+    familyId: uuid("family_id").notNull().references(() => families.id, { onDelete: "cascade" }),
     patientId: uuid("patient_id").references(() => patients.id, { onDelete: "set null" }),
     name: varchar("name", { length: 100 }).notNull(),
     deviceKeyHash: varchar("device_key_hash", { length: 64 }).unique().notNull(),

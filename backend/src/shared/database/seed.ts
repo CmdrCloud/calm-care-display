@@ -281,6 +281,7 @@ async function main() {
   await db.insert(devices).values([
     {
       id: devIds.bedroom,
+      familyId,
       patientId,
       name: "Bedroom e-ink",
       deviceKeyHash: "e987c2f0f353a39e9fc32559ccb7a9f7e5d0a631165bc674d89e5251642828b6", // sha256('bedroom_key')
@@ -294,6 +295,7 @@ async function main() {
     },
     {
       id: devIds.kitchen,
+      familyId,
       patientId,
       name: "Kitchen e-ink",
       deviceKeyHash: "4620f3531b73b22e1b4b9fc03f9ec674e5d0a631165bc674d89e5251642828ff", // sha256('kitchen_key')

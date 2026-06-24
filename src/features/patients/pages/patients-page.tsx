@@ -305,6 +305,209 @@ function AddPatientDialog({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
+function EditPatientDialog({ patient, onSuccess }: { patient: any; onSuccess: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(patient.name || "");
+  const [dateOfBirth, setDateOfBirth] = useState(patient.dateOfBirth || "");
+  const [room, setRoom] = useState(patient.room || "");
+  const [primaryDiagnosis, setPrimaryDiagnosis] = useState(patient.primaryDiagnosis || "");
+  const [allergies, setAllergies] = useState(patient.allergies || "");
+  const [mobility, setMobility] = useState(patient.mobility || "");
+  const [emergencyContactName, setEmergencyContactName] = useState(patient.emergencyContactName || "");
+  const [emergencyContactPhone, setEmergencyContactPhone] = useState(patient.emergencyContactPhone || "");
+  const [riskLevel, setRiskLevel] = useState<"low" | "medium" | "high">(patient.riskLevel || "low");
+  const [notes, setNotes] = useState(patient.notes || "");
+
+  const updatePatientMutation = useMutation({
+    mutationFn: (data: any) => api.put(`/patients/${patient.id}`, data),
+    onSuccess: () => {
+      onSuccess();
+      toast.success("Patient updated successfully!");
+      setOpen(false);
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to update patient.");
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name || !dateOfBirth) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+    updatePatientMutation.mutate({
+      name,
+      dateOfBirth,
+      room: room || undefined,
+      primaryDiagnosis: primaryDiagnosis || undefined,
+      allergies: allergies || undefined,
+      mobility: mobility || undefined,
+      emergencyContactName: emergencyContactName || undefined,
+      emergencyContactPhone: emergencyContactPhone || undefined,
+      riskLevel,
+      notes: notes || undefined,
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="rounded-full">
+          Edit profile
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[600px] rounded-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-semibold">Edit Patient</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid gap-1.5 col-span-1 sm:col-span-2">
+              <Label htmlFor="edit-name" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Full Name <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="edit-name"
+                placeholder="e.g. Eleanor Hayes"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="rounded-xl border-muted-foreground/20 focus-visible:ring-primary"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="edit-dateOfBirth" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Date of Birth <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="edit-dateOfBirth"
+                type="date"
+                value={dateOfBirth}
+                onChange={(e) => setDateOfBirth(e.target.value)}
+                required
+                className="rounded-xl border-muted-foreground/20 focus-visible:ring-primary"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="edit-room" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Room / Location
+              </Label>
+              <Input
+                id="edit-room"
+                placeholder="e.g. Home - Bedroom 1"
+                value={room}
+                onChange={(e) => setRoom(e.target.value)}
+                className="rounded-xl border-muted-foreground/20 focus-visible:ring-primary"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="edit-primaryDiagnosis" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Primary Diagnosis
+              </Label>
+              <Input
+                id="edit-primaryDiagnosis"
+                placeholder="e.g. Hypertension"
+                value={primaryDiagnosis}
+                onChange={(e) => setPrimaryDiagnosis(e.target.value)}
+                className="rounded-xl border-muted-foreground/20 focus-visible:ring-primary"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="edit-riskLevel" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Risk Level
+              </Label>
+              <Select value={riskLevel} onValueChange={(value: any) => setRiskLevel(value)}>
+                <SelectTrigger id="edit-riskLevel" className="rounded-xl border-muted-foreground/20 focus-visible:ring-primary capitalize">
+                  <SelectValue placeholder="Select risk level" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="low" className="capitalize">Low Risk</SelectItem>
+                  <SelectItem value="medium" className="capitalize">Medium Risk</SelectItem>
+                  <SelectItem value="high" className="capitalize">High Risk</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="edit-allergies" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Allergies
+              </Label>
+              <Input
+                id="edit-allergies"
+                placeholder="e.g. Penicillin"
+                value={allergies}
+                onChange={(e) => setAllergies(e.target.value)}
+                className="rounded-xl border-muted-foreground/20 focus-visible:ring-primary"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="edit-mobility" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Mobility Status
+              </Label>
+              <Input
+                id="edit-mobility"
+                placeholder="e.g. Walks with cane"
+                value={mobility}
+                onChange={(e) => setMobility(e.target.value)}
+                className="rounded-xl border-muted-foreground/20 focus-visible:ring-primary"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="edit-emergencyContactName" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Emergency Contact Name
+              </Label>
+              <Input
+                id="edit-emergencyContactName"
+                placeholder="e.g. David Hayes (son)"
+                value={emergencyContactName}
+                onChange={(e) => setEmergencyContactName(e.target.value)}
+                className="rounded-xl border-muted-foreground/20 focus-visible:ring-primary"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="edit-emergencyContactPhone" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Emergency Contact Phone
+              </Label>
+              <Input
+                id="edit-emergencyContactPhone"
+                placeholder="e.g. (555) 887-2210"
+                value={emergencyContactPhone}
+                onChange={(e) => setEmergencyContactPhone(e.target.value)}
+                className="rounded-xl border-muted-foreground/20 focus-visible:ring-primary"
+              />
+            </div>
+            <div className="grid gap-1.5 col-span-1 sm:col-span-2">
+              <Label htmlFor="edit-notes" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Care Notes & Preferences
+              </Label>
+              <Textarea
+                id="edit-notes"
+                placeholder="e.g. Mild memory loss. Drinks tea with breakfast."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={3}
+                className="rounded-xl border-muted-foreground/20 focus-visible:ring-primary"
+              />
+            </div>
+          </div>
+          <DialogFooter className="pt-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} className="rounded-full">
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={updatePatientMutation.isPending}
+              className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {updatePatientMutation.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function PatientsPage() {
   const queryClient = useQueryClient();
   const { data: patientsList = [], isLoading } = useQuery({
@@ -371,9 +574,7 @@ export function PatientsPage() {
               <p className="mt-2 text-sm">{patient.notes}</p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" className="rounded-full">
-                Edit profile
-              </Button>
+              <EditPatientDialog patient={patient} onSuccess={() => queryClient.invalidateQueries({ queryKey: ["patients"] })} />
               <Button variant="ghost" className="rounded-full">
                 View care plan
               </Button>

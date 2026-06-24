@@ -287,7 +287,56 @@ export function DevicesPage() {
     queryFn: () => api.get<any[]>("/devices"),
   });
 
+  const { data: patientsList = [] } = useQuery({
+    queryKey: ["patients"],
+    queryFn: () => api.get<any[]>("/patients"),
+  });
+
+  const { data: doses = [] } = useQuery({
+    queryKey: ["medicationDoses"],
+    queryFn: () => api.get<any[]>("/medications/doses"),
+  });
+
+  const { data: routinesList = [] } = useQuery({
+    queryKey: ["routines"],
+    queryFn: () => api.get<any[]>("/routines"),
+  });
+
   const selectedDevice = devicesList[selectedDeviceIndex] || null;
+
+  const previewPatient =
+    patientsList.find((p: any) => p.id === selectedDevice?.patientId) || patientsList[0] || null;
+
+  const previewPatientDoses = previewPatient
+    ? doses.filter((d: any) => d.medication?.patientId === previewPatient.id)
+    : [];
+
+  const previewSortedDoses = [...previewPatientDoses].sort(
+    (a: any, b: any) => new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime()
+  );
+  const previewNextMed = previewSortedDoses.find((d: any) => d.status === "pending") ?? previewSortedDoses[0] ?? null;
+  const previewMissedDose = previewPatientDoses.find((d: any) => d.status === "missed") ?? null;
+
+  const previewPatientRoutines = previewPatient
+    ? routinesList.filter((r: any) => r.patientId === previewPatient.id && r.isActive)
+    : [];
+
+  const getNextRoutine = (routinesArray: any[]) => {
+    if (routinesArray.length === 0) return null;
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const sortedRoutines = [...routinesArray].sort((a: any, b: any) => {
+      const [hA, mA] = a.scheduledTime.split(":").map(Number);
+      const [hB, mB] = b.scheduledTime.split(":").map(Number);
+      return hA * 60 + mA - (hB * 60 + mB);
+    });
+    const upcomingRoutine = sortedRoutines.find((r: any) => {
+      const [h, m] = r.scheduledTime.split(":").map(Number);
+      return h * 60 + m >= currentMinutes;
+    });
+    return upcomingRoutine ?? sortedRoutines[0];
+  };
+  const previewNextRoutine = getNextRoutine(previewPatientRoutines);
 
   // Initialize form when selected device changes
   useEffect(() => {
@@ -311,6 +360,16 @@ export function DevicesPage() {
     },
     onError: (err: any) => {
       toast.error(err.message || "Failed to update device configuration.");
+    },
+  });
+
+  const forceSyncMutation = useMutation({
+    mutationFn: (deviceId: string) => api.post(`/devices/${deviceId}/force-sync`),
+    onSuccess: () => {
+      toast.success("Sync triggered! The device will re-render on its next poll.");
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to trigger sync.");
     },
   });
 
@@ -396,7 +455,13 @@ export function DevicesPage() {
                 </Badge>
               </CardHeader>
               <CardContent className="bg-muted/40 p-6">
-                <EInkPreview />
+                <EInkPreview
+                  device={selectedDevice}
+                  patient={previewPatient}
+                  nextMedication={previewNextMed}
+                  nextRoutine={previewNextRoutine}
+                  missedDose={previewMissedDose}
+                />
                 <p className="mt-3 text-center text-xs text-muted-foreground">
                   Preview reflects exactly what is rendered on the Raspberry Pi 3 e-ink display.
                 </p>
@@ -538,7 +603,13 @@ export function DevicesPage() {
                   >
                     Configure
                   </Button>
-                  <Button variant="ghost" size="sm" className="flex-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => forceSyncMutation.mutate(d.id)}
+                    disabled={forceSyncMutation.isPending}
+                  >
                     Sync now
                   </Button>
                 </div>
