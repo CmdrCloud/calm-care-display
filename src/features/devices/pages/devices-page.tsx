@@ -324,7 +324,7 @@ export function DevicesPage() {
   const getNextRoutine = (routinesArray: any[]) => {
     if (routinesArray.length === 0) return null;
     const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const currentMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
     const sortedRoutines = [...routinesArray].sort((a: any, b: any) => {
       const [hA, mA] = a.scheduledTime.split(":").map(Number);
       const [hB, mB] = b.scheduledTime.split(":").map(Number);

@@ -108,11 +108,11 @@ export function EinkPreviewPage() {
   // Look for any missed doses today to show as warning alerts on the e-ink screen
   const missedDose = patientDoses.find((d) => d.status === "missed") ?? null;
 
-  // Compute the next upcoming routine activity
+  // Compute the next upcoming routine activity (uses UTC to match server)
   const getNextRoutine = (routinesArray: any[]) => {
     if (routinesArray.length === 0) return null;
     const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const currentMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
 
     const sortedRoutines = [...routinesArray].sort((a, b) => {
       const [hA, mA] = a.scheduledTime.split(":").map(Number);

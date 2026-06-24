@@ -234,6 +234,8 @@ def main():
             print("Consultando servidor...")
             data = fetch_data()
             
+            force_sync = data.get('device', {}).get('forceSync', False)
+            
             print("Renderizando interfaz en imagen...")
             img = render_interface(data, epd.width, epd.height)
             
@@ -244,6 +246,10 @@ def main():
             
             # Enviar telemetría de confirmación
             send_heartbeat()
+            
+            if force_sync:
+                print("Sincronización forzada detectada — re-renderizando inmediatamente.")
+                continue
             
         except Exception as e:
             print(f"Error durante el ciclo: {e}")
