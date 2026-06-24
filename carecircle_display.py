@@ -530,12 +530,7 @@ def get_epd():
 
         _mod2.EPD.ReadBusy = _read_busy_with_timeout
 
-        logger.info("About to call EPD.init()")
-
-        _epd.init()
-
-        logger.info("EPD.init() finished")
-        logger.info("EPD driver initialised")
+        logger.info("EPD driver instance created")
 
     return _epd
 
@@ -545,6 +540,10 @@ def push_to_display(image):
 
     try:
         epd = get_epd()
+
+        logger.info("About to call epd.init()")
+        epd.init()
+        logger.info("epd.init() finished")
 
         logger.info("About to call getbuffer()")
 
